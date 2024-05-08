@@ -1,0 +1,13 @@
+services:
+  app:
+    image: test
+    command: npm run dev:docker
+    ports:
+      - 127.0.0.1:5000:5000
+    volumes:
+      - type: bind
+        source: src
+        target: /express-docker/src
+      - type: bind
+        source: package.json
+        target: /express-docker/package.json
