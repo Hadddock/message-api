@@ -19,4 +19,4 @@ COPY /dist .
 CMD [ "node", "src/index.js" ]
 
 # Exposing server port
-EXPOSE 5000
+EXPOSE 8080

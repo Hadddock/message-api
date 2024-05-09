@@ -19,4 +19,4 @@ COPY /src ./src
 CMD [ "npm", "run", "dev"]
 
 # Exposing server port
-EXPOSE 5000
+EXPOSE 8080
