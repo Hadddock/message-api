@@ -5,10 +5,10 @@
   "main": "src/index.ts",
   "scripts": {
     "start": "ts-node src/index.ts",
-    "dev": "nodemon src/index.ts",
-    "dev:docker": "nodemon --legacy-watch --polling-interval 3000 src/index.ts",
+    "dev": "set NODE_ENV=dev&&nodemon src/index.ts ",
+    "dev:docker": "set NODE_ENV=dev&&nodemon --legacy-watch --polling-interval 3000 src/index.ts",
     "build": "tsc",
-    "start:dist": "node dist/src/index.js",
+    "start:dist": "set NODE_ENV=prod&&node dist/src/index.js",
     "lint": "eslint --fix src test",
     "test": "jest",
     "typecheck": "tsc --noEmit"
