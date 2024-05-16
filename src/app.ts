@@ -2,10 +2,8 @@ import express from 'express';
 import morgan from 'morgan';
 import helmet from 'helmet';
 import cors from 'cors';
-
 import * as middlewares from './middlewares';
-import api from './api';
-import MessageResponse from './interfaces/MessageResponse';
+
 import dbConnection from './middleware/database';
 import userRouter from './routes/userRouter';
 
@@ -21,8 +19,7 @@ app.use(express.json());
 
 createDBConnection();
 
-app.use('/api/v1', api);
-
+app.use(userRouter);
 app.use(middlewares.notFound);
 app.use(middlewares.errorHandler);
 
