@@ -6,8 +6,11 @@ import cors from 'cors';
 import * as middlewares from './middlewares';
 import api from './api';
 import MessageResponse from './interfaces/MessageResponse';
+import dbConnection from './middleware/database';
+import userRouter from './routes/userRouter';
 
-require('dotenv').config();
+import dotenv from 'dotenv';
+dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
 
 const app = express();
 
