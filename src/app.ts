@@ -19,11 +19,7 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
-app.get<{}, MessageResponse>('/', (req, res) => {
-  res.json({
-    message: '🦄🌈✨👋🌎🌍🌏✨🌈🦄',
-  });
-});
+createDBConnection();
 
 app.use('/api/v1', api);
 
@@ -31,3 +27,7 @@ app.use(middlewares.notFound);
 app.use(middlewares.errorHandler);
 
 export default app;
+
+async function createDBConnection() {
+  dbConnection();
+}
