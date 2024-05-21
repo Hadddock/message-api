@@ -7,6 +7,12 @@ import * as middlewares from './middlewares';
 import dbConnection from './middleware/database';
 import userRouter from './routes/userRouter';
 
+import session from 'express-session';
+import passport from 'passport';
+
+import { Strategy as LocalStrategy } from 'passport-local';
+import './middleware/authentication';
+
 import dotenv from 'dotenv';
 dotenv.config({ path: `.env.${process.env.NODE_ENV}` });
 
@@ -17,6 +23,15 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 
+app.use(
+  session({
+    secret: <string>process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+app.use(passport.session());
+app.use(express.urlencoded({ extended: false }));
 createDBConnection();
 
 app.use(userRouter);
