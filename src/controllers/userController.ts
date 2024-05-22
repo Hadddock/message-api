@@ -14,13 +14,31 @@ export const getUser: RequestHandler = async (req, res, next) => {
   res.send('placeholder');
 };
 
-export const login: RequestHandler = passport.authenticate('local', {});
+export const login: RequestHandler = async (req, res, next) => {
+  passport.authenticate('local', (err: any, user: any) => {
+    if (err) {
+      return next(err);
+    }
+    if (!user) {
+      return res
+        .status(401)
+        .json({ message: 'Incorrect username or password' });
+    }
+    req.logIn(user, (err) => {
+      if (err) {
+        return next(err);
+      }
+      return res.status(200).json({ message: 'Successfully logged in', user });
+    });
+  })(req, res, next);
+};
 
 export const logout: RequestHandler = async (req, res, next) => {
   req.logout((err) => {
     if (err) {
       return next(err);
     }
+    res.status(200).send('logged out');
   });
 };
 
