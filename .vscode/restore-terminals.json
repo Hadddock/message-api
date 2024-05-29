@@ -1,0 +1,29 @@
+{
+  "keepExistingTerminalsOpen": false,
+  "runOnStartup": true,
+  "terminals": [
+    {
+      "splitTerminals": [
+        {
+          "name": "server",
+          "commands": []
+        }
+      ]
+    },
+    {
+      "splitTerminals": [
+        {
+          "name": "server",
+          "commands": ["npm run dev"],
+          "shouldRunCommands": false
+        },
+        {
+          "name": "database",
+          "commands": [
+            "& 'C:\\Program Files\\MongoDB\\Server\\7.0\\bin\\mongod.exe'"
+          ]
+        }
+      ]
+    }
+  ]
+}
