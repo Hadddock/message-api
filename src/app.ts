@@ -22,12 +22,16 @@ app.use(morgan('dev'));
 app.use(helmet());
 app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use(express.json());
-
+app.set('trust proxy', 1);
 app.use(
   session({
     secret: <string>process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: true,
+    cookie: {
+      sameSite: 'none',
+      secure: true,
+    },
   })
 );
 app.use(passport.session());
