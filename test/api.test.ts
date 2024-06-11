@@ -1,29 +1,23 @@
 import request from 'supertest';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import app from '../test/__mocks__/mockApp';
+import dbConnection from '../test/__mocks__/mockDatabase';
 
-import app from '../src/app';
-
-describe('GET /api/v1', () => {
-  it('responds with a json message', (done) => {
-    request(app)
-      .get('/api/v1')
-      .set('Accept', 'application/json')
-      .expect('Content-Type', /json/)
-      .expect(
-        200,
-        {
-          message: 'API - 👋🌎🌍🌏',
-        },
-        done
-      );
+beforeAll(async () => {
+  const mongoServer = await MongoMemoryServer.create({
+    instance: { port: 2000 },
   });
+  const mongoUri = mongoServer.getUri();
+  process.env.CONNECTION_STRING = mongoUri;
+  await dbConnection(mongoUri);
 });
 
-describe('GET /api/v1/emojis', () => {
-  it('responds with a json message', (done) => {
+describe('GET /home', () => {
+  it('responds with a json message about authentication status', (done) => {
     request(app)
-      .get('/api/v1/emojis')
+      .get('/home')
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
-      .expect(200, ['😀', '😳', '🙄'], done);
+      .expect(401, { message: 'You are not authenticated' }, done);
   });
 });
