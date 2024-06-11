@@ -46,6 +46,6 @@ export const home: RequestHandler = async (req, res, next) => {
   if (req.isAuthenticated()) {
     res.json({ message: 'You are authenticated' });
   } else {
-    res.json({ message: 'You are not authenticated' });
+    res.status(401).json({ message: 'You are not authenticated' });
   }
 };
