@@ -26,7 +26,7 @@ app.use(
     saveUninitialized: true,
     cookie: {
       sameSite: 'none',
-      secure: true,
+      secure: false, //secure must be false for retaining session with super agent
     },
   })
 );
