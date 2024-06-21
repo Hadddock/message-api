@@ -1,3 +1,4 @@
+import { Conversation } from './Conversation';
 export interface User {
   id: string;
   username: string;
@@ -7,5 +8,5 @@ export interface User {
   userProfile?: Object;
   bio: string;
   joinTime: Date;
-  pinnedConversations?: [];
+  pinnedConversations?: Array<Conversation>;
 }

@@ -9,7 +9,7 @@ const userSchema = new Schema<IUser>({
   userProfile: { type: Object },
   bio: { type: String, required: true, default: 'Hello!' },
   joinTime: { type: Date, required: true, default: Date.now() },
-  pinnedConversations: { type: Array },
+  pinnedConversations: [{ type: Schema.Types.ObjectId, ref: 'Conversation' }],
 });
 
 const User = model<IUser>('User', userSchema);
