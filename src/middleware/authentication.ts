@@ -2,6 +2,7 @@ import { Strategy } from 'passport-local';
 import User from '../models/User';
 import { User as IUser } from './../interfaces/User';
 import passport from 'passport';
+import bcrypt from 'bcrypt';
 
 //add properties to passport user interface
 declare global {
@@ -14,11 +15,16 @@ const LocalStrategy = new Strategy(async (username, password, done) => {
   try {
     const user = await User.findOne({ username: username });
     if (!user) {
-      return done(null, false, { message: 'Username not found' });
+      return done(null, undefined, { message: 'Username not found' });
+    }
+    if (user.password === undefined) {
+      return done(null, undefined, { message: 'Password undefined' });
     }
 
-    if (user.password !== password) {
-      return done(null, false, { message: 'Incorrect password' });
+    const isMatch = await bcrypt.compare(password, user.password);
+
+    if (!isMatch) {
+      return done(null, undefined, { message: 'Incorrect password' });
     }
 
     return done(null, user);
