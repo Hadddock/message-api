@@ -4,8 +4,6 @@ import passport from 'passport';
 import { isStrongPassword } from 'validator';
 import bcrypt from 'bcrypt';
 
-import { User as IUser } from './../interfaces/User';
-
 export const getUser: RequestHandler = async (req, res, next) => {
   res.send('placeholder');
 };
@@ -26,6 +24,22 @@ export const signUp: RequestHandler = async (req, res, next) => {
       message:
         'Password is not strong enough. Passwords must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
     });
+  }
+
+  if (password.length > 256) {
+    return res.status(400).json({
+      message: 'Password is too long',
+    });
+  }
+
+  if (username.length < 3) {
+    return res.status(400).json({
+      message: 'Username is too short',
+    });
+  }
+
+  if (username.length > 36) {
+    return res.status(400).json({ message: 'Username is too long' });
   }
 
   bcrypt.hash(req.body.password, 10, async (err, hash) => {
