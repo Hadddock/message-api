@@ -149,4 +149,28 @@ describe('POST /login', () => {
       .expect('Content-Type', /json/)
       .expect(200, done);
   });
+
+  it('responds with a 401 and incorrect username or password due to incorrect username', (done) => {
+    request(app)
+      .post('/login')
+      .send({
+        username: 'usernamedsaw',
+        password: 'P@ssw0rd',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(401, { message: 'Incorrect username or password' }, done);
+  });
+
+  it('responds with a 401 and incorrect username or password due to incorrect password', (done) => {
+    request(app)
+      .post('/login')
+      .send({
+        username: 'username2',
+        password: 'wrongpassword',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(401, { message: 'Incorrect username or password' }, done);
+  });
 });
