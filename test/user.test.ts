@@ -25,6 +25,14 @@ beforeAll(async () => {
     .expect(201);
 
   await agent
+    .post('/signup')
+    .send({
+      username: 'username2',
+      password: 'P@ssw0rd',
+    })
+    .expect(201);
+
+  await agent
     .post('/login')
     .send({ username: 'username', password: 'P@ssw0rd' })
     .set('Accept', 'application/json')
@@ -81,17 +89,6 @@ describe('POST /signup with weak passwords', () => {
   });
 });
 
-// describe('POST /login', () => {
-//   it('responds with a successful login message', (done) => {
-//     request(app)
-//       .post('/login')
-//       .send({ username: 'username', password: 'password' })
-//       .set('Accept', 'application/json')
-//       .expect('Content-Type', /json/)
-//       .expect(200, done);
-//   });
-// });
-
 describe('GET /home', () => {
   it('responds with a json message about successful authentication status', (done) => {
     agent
@@ -126,6 +123,26 @@ describe('POST /signup successfully', () => {
       .post('/login')
       .send({
         username: 'newuser',
+        password: 'P@ssw0rd',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200, done);
+  });
+});
+
+describe('GET /logout', () => {
+  it('logs out user successfully', (done) => {
+    request(app).get('/logout').expect(200, 'logged out', done);
+  });
+});
+
+describe('POST /login', () => {
+  it('responds with a 200 and logs in user', (done) => {
+    request(app)
+      .post('/login')
+      .send({
+        username: 'username2',
         password: 'P@ssw0rd',
       })
       .set('Accept', 'application/json')
