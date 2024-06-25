@@ -109,6 +109,43 @@ describe('POST /signup', () => {
       .expect('Content-Type', /json/)
       .expect(400, done);
   });
+
+  it('responds with a 400 due to password being too long', (done) => {
+    request(app)
+      .post('/signup')
+      .send({
+        username: 'usernametwo',
+        password:
+          'P@ssw0rdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 due to username being too short', (done) => {
+    request(app)
+      .post('/signup')
+      .send({
+        username: 'us',
+        password: 'P@ssw0rd',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 due to username being too long', (done) => {
+    request(app)
+      .post('/signup')
+      .send({
+        username: 'uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu',
+        password: 'P@ssw0rd',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
 });
 
 describe('GET /home', () => {
