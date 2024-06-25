@@ -3,6 +3,7 @@ import morgan from 'morgan';
 import helmet from 'helmet';
 
 import userRouter from './../../src/routes/userRouter';
+import conversationRouter from './../../src/routes/conversationRouter';
 
 import session from 'express-session';
 import passport from 'passport';
@@ -34,6 +35,7 @@ app.use(passport.session());
 app.use(express.urlencoded({ extended: false }));
 
 app.use(userRouter);
+app.use(conversationRouter);
 app.use(notFound);
 app.use(errorHandler);
 
