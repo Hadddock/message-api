@@ -44,10 +44,37 @@ describe('POST /signup with existing username', () => {
 });
 
 describe('POST /signup with weak passwords', () => {
-  it('responds with a 400 password not strong enough due to lacking uppercase characters', (done) => {
+  it('responds with a 400 password not strong enough due to lacking an uppercase character', (done) => {
     request(app)
       .post('/signup')
       .send({ username: 'usernametwo', password: 'p@ssw0rd' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 password not strong enough due to lacking a lowercase character', (done) => {
+    request(app)
+      .post('/signup')
+      .send({ username: 'usernametwo', password: 'P@SSW0RD' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 password not strong enough due to lacking a symbol', (done) => {
+    request(app)
+      .post('/signup')
+      .send({ username: 'usernametwo', password: 'Passw0rd' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 password not strong enough due to lacking a number', (done) => {
+    request(app)
+      .post('/signup')
+      .send({ username: 'usernametwo', password: 'P@ssword' })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
       .expect(400, done);
@@ -74,13 +101,3 @@ describe('GET /home', () => {
       .expect(200, { message: 'You are authenticated' }, done);
   });
 });
-
-// describe('GET /home', () => {
-//   it('responds with a json message about unsuccessful authentication status', (done) => {
-//     request(app)
-//       .get('/home')
-//       .set('Accept', 'application/json')
-//       .expect('Content-Type', /json/)
-//       .expect(401, { message: 'You are not authenticated' }, done);
-//   });
-// });
