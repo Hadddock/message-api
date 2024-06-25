@@ -101,3 +101,29 @@ describe('GET /home', () => {
       .expect(200, { message: 'You are authenticated' }, done);
   });
 });
+
+describe('POST /signup successfully', () => {
+  it('responds with a 200 and creates new user', (done) => {
+    request(app)
+      .post('/signup')
+      .send({
+        username: 'newuser',
+        password: 'P@ssw0rd',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(201, done);
+  });
+
+  it('responds with a 200 and logs in as new user', (done) => {
+    request(app)
+      .post('/login')
+      .send({
+        username: 'newuser',
+        password: 'P@ssw0rd',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200, done);
+  });
+});
