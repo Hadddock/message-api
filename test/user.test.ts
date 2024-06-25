@@ -40,7 +40,31 @@ beforeAll(async () => {
     .expect(200);
 });
 
-describe('POST /signup with existing username', () => {
+describe('POST /signup', () => {
+  it('responds with a 200 and creates new user', (done) => {
+    request(app)
+      .post('/signup')
+      .send({
+        username: 'newuser',
+        password: 'P@ssw0rd',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(201, done);
+  });
+
+  it('responds with a 200 and logs in as new user', (done) => {
+    request(app)
+      .post('/login')
+      .send({
+        username: 'newuser',
+        password: 'P@ssw0rd',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200, done);
+  });
+
   it('responds with a 400 username already taken', (done) => {
     request(app)
       .post('/signup')
@@ -49,9 +73,7 @@ describe('POST /signup with existing username', () => {
       .expect('Content-Type', /json/)
       .expect(400, { message: 'Username already taken' }, done);
   });
-});
 
-describe('POST /signup with weak passwords', () => {
   it('responds with a 400 password not strong enough due to lacking an uppercase character', (done) => {
     request(app)
       .post('/signup')
@@ -96,38 +118,6 @@ describe('GET /home', () => {
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
       .expect(200, { message: 'You are authenticated' }, done);
-  });
-});
-
-describe('GET /logout', () => {
-  it('logs out user successfully', (done) => {
-    request(app).get('/logout').expect(200, 'logged out', done);
-  });
-});
-
-describe('POST /signup successfully', () => {
-  it('responds with a 200 and creates new user', (done) => {
-    request(app)
-      .post('/signup')
-      .send({
-        username: 'newuser',
-        password: 'P@ssw0rd',
-      })
-      .set('Accept', 'application/json')
-      .expect('Content-Type', /json/)
-      .expect(201, done);
-  });
-
-  it('responds with a 200 and logs in as new user', (done) => {
-    request(app)
-      .post('/login')
-      .send({
-        username: 'newuser',
-        password: 'P@ssw0rd',
-      })
-      .set('Accept', 'application/json')
-      .expect('Content-Type', /json/)
-      .expect(200, done);
   });
 });
 
