@@ -53,16 +53,17 @@ describe('POST /signup', () => {
       .expect(201, done);
   });
 
-  it('responds with a 200 and logs in as new user', (done) => {
+  it('responds with a 200 and creates new user with an email', (done) => {
     request(app)
-      .post('/login')
+      .post('/signup')
       .send({
-        username: 'newuser',
+        username: 'newuser2',
         password: 'P@ssw0rd',
+        email: 'testemail@gmail.com',
       })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
-      .expect(200, done);
+      .expect(201, done);
   });
 
   it('responds with a 400 username already taken', (done) => {
@@ -110,7 +111,7 @@ describe('POST /signup', () => {
       .expect(400, done);
   });
 
-  it('responds with a 400 due to password being too long', (done) => {
+  it('responds with a 400 due to password being > 256 characters long', (done) => {
     request(app)
       .post('/signup')
       .send({
@@ -123,7 +124,7 @@ describe('POST /signup', () => {
       .expect(400, done);
   });
 
-  it('responds with a 400 due to username being too short', (done) => {
+  it('responds with a 400 due to username being < 3 characters long', (done) => {
     request(app)
       .post('/signup')
       .send({
@@ -135,12 +136,25 @@ describe('POST /signup', () => {
       .expect(400, done);
   });
 
-  it('responds with a 400 due to username being too long', (done) => {
+  it('responds with a 400 due to username being > 36 characters long', (done) => {
     request(app)
       .post('/signup')
       .send({
         username: 'uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu',
         password: 'P@ssw0rd',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 due to incorrectly formatted email', (done) => {
+    request(app)
+      .post('/signup')
+      .send({
+        username: 'usernametwo',
+        password: 'P@ssw0rd',
+        email: 'notanemail',
       })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)

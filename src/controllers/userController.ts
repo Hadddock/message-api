@@ -1,7 +1,7 @@
 import User from '../models/User';
 import { RequestHandler } from 'express';
 import passport from 'passport';
-import { isStrongPassword } from 'validator';
+import { isStrongPassword, isEmail } from 'validator';
 import bcrypt from 'bcrypt';
 
 export const getUser: RequestHandler = async (req, res, next) => {
@@ -9,7 +9,7 @@ export const getUser: RequestHandler = async (req, res, next) => {
 };
 
 export const signUp: RequestHandler = async (req, res, next) => {
-  const { username, password } = req.body;
+  const { username, password, email } = req.body;
 
   const existingUser = await User.findOne({ username: username });
 
@@ -40,6 +40,12 @@ export const signUp: RequestHandler = async (req, res, next) => {
 
   if (username.length > 36) {
     return res.status(400).json({ message: 'Username is too long' });
+  }
+
+  if (email) {
+    if (!isEmail(email)) {
+      return res.status(400).json({ message: 'Invalid email' });
+    }
   }
 
   bcrypt.hash(req.body.password, 10, async (err, hash) => {
