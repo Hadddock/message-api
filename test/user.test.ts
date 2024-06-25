@@ -102,6 +102,12 @@ describe('GET /home', () => {
   });
 });
 
+describe('GET /logout', () => {
+  it('logs out user successfully', (done) => {
+    request(app).get('/logout').expect(200, 'logged out', done);
+  });
+});
+
 describe('POST /signup successfully', () => {
   it('responds with a 200 and creates new user', (done) => {
     request(app)
