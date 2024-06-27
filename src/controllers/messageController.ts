@@ -56,8 +56,8 @@ export const postMessage: RequestHandler = async (req, res, next) => {
 
   try {
     const [foundConversation, foundUser] = await Promise.all([
-      Conversation.find({ _id: conversation }),
-      User.find({ _id: user }),
+      Conversation.findOne({ _id: conversation }),
+      User.findOne({ _id: user }),
     ]);
 
     if (!foundConversation) {
