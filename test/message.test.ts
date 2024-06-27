@@ -6,6 +6,8 @@ import User from '../src/models/User';
 import mongoose from 'mongoose';
 
 const agent = request.agent(app);
+
+import { maxContentLength, maxImageUrlLength } from '../src/models/Message';
 let userOneId: mongoose.Types.ObjectId;
 let userTwoId: mongoose.Types.ObjectId;
 let conversation: mongoose.Types.ObjectId;
@@ -58,9 +60,7 @@ beforeAll(async () => {
 });
 
 describe('POST /conversation', () => {
-  console.log(conversation);
-
-  it('responds with a 201 and creates new message', (done) => {
+  it('responds with a 201 and creates new message with only content', (done) => {
     agent
       .post(`/conversation/${conversation}/message`)
       .send({
@@ -69,5 +69,110 @@ describe('POST /conversation', () => {
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
       .expect(201, done);
+  });
+
+  it('responds with a 201 including both content and an image url', (done) => {
+    agent
+      .post(`/conversation/${conversation}/message`)
+      .send({
+        content: "Here's the wikipedia logo!",
+        imageUrl: 'https://en.wikipedia.org/static/images/icons/wikipedia.png',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(201, done);
+  });
+
+  it('responds with a 201 including an image url', (done) => {
+    agent
+      .post(`/conversation/${conversation}/message`)
+      .send({
+        imageUrl: 'https://en.wikipedia.org/static/images/icons/wikipedia.png',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(201, done);
+  });
+
+  it('responds with a 400 due to not containing content or imageURL', (done) => {
+    agent
+      .post(`/conversation/${conversation}/message`)
+      .send({})
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 due to content only containing whitespace', (done) => {
+    agent
+      .post(`/conversation/${conversation}/message`)
+      .send({ content: '            ' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 due to content being empty', (done) => {
+    agent
+      .post(`/conversation/${conversation}/message`)
+      .send({ content: '' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 due to conversation not existing', (done) => {
+    agent
+      .post(`/conversation/${new mongoose.Types.ObjectId()}/message`)
+      .send({ content: 'hello' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it(`responds with a 400 due to content being > ${maxContentLength} characters long`, (done) => {
+    agent
+      .post(`/conversation/${conversation}/message`)
+      .send({
+        content: 'a'.repeat(maxContentLength + 1),
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it(`responds with a 400 due to imageurl being > ${maxImageUrlLength} characters long`, (done) => {
+    agent
+      .post(`/conversation/${conversation}/message`)
+      .send({
+        imageUrl:
+          'http://www.example.com/' +
+          'a'.repeat(maxImageUrlLength + 1) +
+          '.png',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 403 due to not being logged in', (done) => {
+    request(app)
+      .post(`/conversation/${conversation}/message`)
+      .send({ content: 'hello' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(403, done);
+  });
+
+  it('responds with a 400 due image url not being an image', (done) => {
+    request(app)
+      .post(`/conversation/${conversation}/message`)
+      .send({
+        imageUrl:
+          'https://en.wikipedia.org/wiki/File:Ented,_Nokturn_a-moll_-_Jesienny.ogg',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(403, done);
   });
 });
