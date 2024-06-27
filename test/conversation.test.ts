@@ -62,4 +62,88 @@ describe('POST /conversation', () => {
       .expect('Content-Type', /json/)
       .expect(201, done);
   });
+
+  it('responds with a 400 due to having only one userId', (done) => {
+    request(app)
+      .post('/conversation')
+      .send({
+        name: 'new conversation',
+        users: [userOneId],
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 due to having only one distinct userId', (done) => {
+    request(app)
+      .post('/conversation')
+      .send({
+        name: 'new conversation',
+        users: [userOneId, userOneId],
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 due to having no userIds', (done) => {
+    request(app)
+      .post('/conversation')
+      .send({
+        name: 'new conversation',
+        users: [],
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 due to having a name that is < 2 characters long', (done) => {
+    request(app)
+      .post('/conversation')
+      .send({
+        name: 'a',
+        users: [userOneId, userOneId],
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 due to having a name that is > 100 characters long', (done) => {
+    request(app)
+      .post('/conversation')
+      .send({
+        name: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        users: [userOneId, userOneId],
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 due to having a userId that does not correspond to an actual user', (done) => {
+    request(app)
+      .post('/conversation')
+      .send({
+        name: 'new conversation',
+        users: [new mongoose.Types.ObjectId(), userOneId],
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 201 and creates new conversation, sanitizing number input to a string', (done) => {
+    request(app)
+      .post('/conversation')
+      .send({
+        name: 21,
+        users: [userOneId, userTwoId],
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(201, done);
+  });
 });
