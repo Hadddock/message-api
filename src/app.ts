@@ -7,6 +7,7 @@ import * as middlewares from './middlewares';
 import dbConnection from './middleware/database';
 import userRouter from './routes/userRouter';
 import conversationRouter from './routes/conversationRouter';
+import messageRouter from './routes/messageRouter';
 
 import session from 'express-session';
 import passport from 'passport';
@@ -41,6 +42,7 @@ createDBConnection();
 
 app.use(userRouter);
 app.use(conversationRouter);
+app.use(messageRouter);
 app.use(middlewares.notFound);
 app.use(middlewares.errorHandler);
 
