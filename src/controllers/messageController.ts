@@ -22,7 +22,11 @@ export const postMessage: RequestHandler = async (req, res, next) => {
     });
   }
 
-  const { content, imageUrl }: MessageRequestBody = req.body;
+  let { content, imageUrl }: MessageRequestBody = req.body;
+  if (content) {
+    content = content.trim();
+  }
+
   const conversation = req.params.conversation;
   const user = req.user.id;
 
