@@ -2,6 +2,7 @@ import User from '../models/User';
 import Conversation from '../models/Conversation';
 import Message from '../models/Message';
 import { RequestHandler } from 'express';
+import validator = require('validator');
 
 type MessageRequestBody = {
   content: string;
@@ -13,6 +14,7 @@ import {
   minContentLength,
   maxImageUrlLength,
   minImageUrlLength,
+  imageRegex,
 } from '../models/Message';
 
 export const postMessage: RequestHandler = async (req, res, next) => {
@@ -25,6 +27,14 @@ export const postMessage: RequestHandler = async (req, res, next) => {
   let { content, imageUrl }: MessageRequestBody = req.body;
   if (content) {
     content = content.trim();
+  }
+
+  if (imageUrl) {
+    if (!validator.isURL(imageUrl) || !imageRegex.test(imageUrl)) {
+      return res.status(400).json({
+        message: 'Invalid image URL. URL must be a valid image URL',
+      });
+    }
   }
 
   const conversation = req.params.conversation;
