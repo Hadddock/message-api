@@ -2,11 +2,12 @@ import { Schema, model } from 'mongoose';
 import { Conversation as IConversation } from '../interfaces/Conversation';
 // Schema
 
-const maxUsers = 12;
-const minUsers = 2;
-
-const minNameLength = 2;
-const maxNameLength = 100;
+import {
+  maxUsers,
+  minUsers,
+  minNameLength,
+  maxNameLength,
+} from '../interfaces/Conversation';
 const conversationSchema = new Schema<IConversation>({
   name: {
     type: String,

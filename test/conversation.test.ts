@@ -11,6 +11,13 @@ const agent = request.agent(app);
 let userOneId: mongoose.Types.ObjectId;
 let userTwoId: mongoose.Types.ObjectId;
 
+import {
+  maxUsers,
+  minUsers,
+  minNameLength,
+  maxNameLength,
+} from '../src/interfaces/Conversation';
+
 beforeAll(async () => {
   const mongoServer = await MongoMemoryServer.create({
     instance: { port: 2000 },
@@ -62,6 +69,7 @@ describe('POST /conversation', () => {
       .expect('Content-Type', /json/)
       .expect(201, done);
   });
+
   it(`responds with a 400 due to having > ${maxUsers} users`, async () => {
     let users = [];
 
@@ -128,7 +136,7 @@ describe('POST /conversation', () => {
       .expect(400, done);
   });
 
-  it('responds with a 400 due to having a name that is < 2 characters long', (done) => {
+  it(`responds with a 400 due to having a name that is < ${minNameLength} characters long`, (done) => {
     agent
       .post('/conversation')
       .send({
@@ -140,11 +148,11 @@ describe('POST /conversation', () => {
       .expect(400, done);
   });
 
-  it('responds with a 400 due to having a name that is > 100 characters long', (done) => {
+  it(`responds with a 400 due to having a name that is > ${maxNameLength} characters long`, (done) => {
     agent
       .post('/conversation')
       .send({
-        name: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        name: 'a'.repeat(maxNameLength + 1),
         users: [userOneId, userOneId],
       })
       .set('Accept', 'application/json')

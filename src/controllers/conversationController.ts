@@ -6,12 +6,12 @@ interface ConversationRequestBody {
   name: string;
   users: string[];
 }
-
-const maxUsers = 12;
-const minUsers = 2;
-
-const minNameLength = 2;
-const maxNameLength = 100;
+import {
+  maxUsers,
+  minUsers,
+  minNameLength,
+  maxNameLength,
+} from '../interfaces/Conversation';
 
 export const postConversation: RequestHandler = async (req, res, next) => {
   if (!req.isAuthenticated()) {
