@@ -62,6 +62,35 @@ describe('POST /conversation', () => {
       .expect('Content-Type', /json/)
       .expect(201, done);
   });
+  it(`responds with a 400 due to having > ${maxUsers} users`, async () => {
+    let users = [];
+
+    for (let i = 0; i < maxUsers; i++) {
+      let currentUsername = 'repeatusername' + (i + 1);
+      await agent
+        .post('/signup')
+        .send({
+          username: currentUsername,
+          password: 'P@ssw0rd',
+        })
+        .expect(201);
+      let currentUser = await User.findOne({ username: currentUsername });
+      if (currentUser) {
+        users.push(currentUser._id);
+      }
+    }
+    users.push(userOneId);
+
+    await agent
+      .post('/conversation')
+      .send({
+        name: 'toomanyusersconversation',
+        users: users,
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
 
   it('responds with a 400 due to having only one userId', (done) => {
     agent
