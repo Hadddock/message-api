@@ -9,6 +9,7 @@ export interface User {
   bio: string;
   joinTime: Date;
   pinnedConversations?: Array<Conversation>;
+  getPublicProfile(): User;
 }
 
 const maxBioLength = 140;

@@ -42,5 +42,15 @@ const userSchema = new Schema<IUser>({
   pinnedConversations: [{ type: Schema.Types.ObjectId, ref: 'Conversation' }],
 });
 
+userSchema.methods.getPublicProfile = function () {
+  return {
+    username: this.username,
+    avatar: this.avatar,
+    userProfile: this.userProfile,
+    bio: this.bio,
+    joinTime: this.joinTime,
+  };
+};
+
 const User = model<IUser>('User', userSchema);
 export default User;
