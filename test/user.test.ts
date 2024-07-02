@@ -4,6 +4,13 @@ import app from '../test/__mocks__/mockApp';
 import dbConnection from '../test/__mocks__/mockDatabase';
 import User from '../src/models/User';
 import { signUp } from '../src/controllers/userController';
+import {
+  maxBioLength,
+  maxPasswordLength,
+  maxUsernameLength,
+  minPasswordLength,
+  minUsernameLength,
+} from '../src/interfaces/User';
 
 const agent = request.agent(app);
 
@@ -75,6 +82,19 @@ describe('POST /signup', () => {
       .expect(400, { message: 'Username already taken' }, done);
   });
 
+  it('responds with a 400 bio too long', (done) => {
+    request(app)
+      .post('/signup')
+      .send({
+        username: 'username',
+        password: 'P@ssw0rd',
+        bio: 'a'.repeat(maxBioLength + 1),
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, { message: 'Username already taken' }, done);
+  });
+
   it('responds with a 400 password not strong enough due to lacking an uppercase character', (done) => {
     request(app)
       .post('/signup')
@@ -111,20 +131,19 @@ describe('POST /signup', () => {
       .expect(400, done);
   });
 
-  it('responds with a 400 due to password being > 256 characters long', (done) => {
+  it(`responds with a 400 due to password being > ${maxPasswordLength} characters long`, (done) => {
     request(app)
       .post('/signup')
       .send({
         username: 'usernametwo',
-        password:
-          'P@ssw0rdddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd',
+        password: 'P@ssw0r' + 'd'.repeat(maxPasswordLength - 6),
       })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
       .expect(400, done);
   });
 
-  it('responds with a 400 due to username being < 3 characters long', (done) => {
+  it(`responds with a 400 due to username being < ${minUsernameLength} characters long`, (done) => {
     request(app)
       .post('/signup')
       .send({
@@ -136,7 +155,7 @@ describe('POST /signup', () => {
       .expect(400, done);
   });
 
-  it('responds with a 400 due to username being > 36 characters long', (done) => {
+  it(`responds with a 400 due to username being > ${maxUsernameLength} characters long`, (done) => {
     request(app)
       .post('/signup')
       .send({

@@ -4,12 +4,27 @@ import passport from 'passport';
 import { isStrongPassword, isEmail } from 'validator';
 import bcrypt from 'bcrypt';
 
+import {
+  maxBioLength,
+  maxPasswordLength,
+  minPasswordLength,
+  minUsernameLength,
+  maxUsernameLength,
+} from '../interfaces/User';
+
 export const getUser: RequestHandler = async (req, res, next) => {
   res.send('placeholder');
 };
 
+type MessageRequestBody = {
+  username: string;
+  password: string;
+  email?: string;
+  bio?: string;
+};
+
 export const signUp: RequestHandler = async (req, res, next) => {
-  const { username, password, email } = req.body;
+  const { username, password, email, bio }: MessageRequestBody = req.body;
 
   const existingUser = await User.findOne({ username: username });
 
@@ -26,20 +41,32 @@ export const signUp: RequestHandler = async (req, res, next) => {
     });
   }
 
-  if (password.length > 256) {
+  if (bio) {
+    if (bio.length > maxBioLength) {
+      return res.status(400).json({
+        message: `Bio is too long. Bio must be <= ${maxBioLength} characters long`,
+      });
+    }
+  }
+
+  if (password.length > maxPasswordLength) {
     return res.status(400).json({
-      message: 'Password is too long',
+      message: `Password is too long. Password must be <= ${maxPasswordLength} characters long`,
     });
   }
 
-  if (username.length < 3) {
+  if (username.length < minUsernameLength) {
     return res.status(400).json({
-      message: 'Username is too short',
+      message: `Username is too short. Username must be greater than ${maxUsernameLength} characters long`,
     });
   }
 
   if (username.length > 36) {
-    return res.status(400).json({ message: 'Username is too long' });
+    return res
+      .status(400)
+      .json({
+        message: `Username is too long. Username must be less than ${maxUsernameLength}`,
+      });
   }
 
   if (email) {
