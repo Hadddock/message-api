@@ -86,6 +86,23 @@ export const signUp: RequestHandler = async (req, res, next) => {
   });
 };
 
+export const searchUser: RequestHandler = async (req, res, next) => {
+  const username = req.query.username;
+
+  if (!username) {
+    return res.status(400).json({ message: 'Username is required' });
+  }
+  const users = await User.find({ username: new RegExp('^' + username, 'i') });
+
+  const publicProfiles = users.map((user) => user.getPublicProfile());
+
+  if (publicProfiles.length > 0) {
+    res.status(200).json(publicProfiles);
+  } else {
+    res.status(200).json([]);
+  }
+};
+
 export const login: RequestHandler = async (req, res, next) => {
   passport.authenticate('local', async (err: any, user: any) => {
     if (err) {

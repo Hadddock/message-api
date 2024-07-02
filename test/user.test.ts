@@ -47,6 +47,36 @@ beforeAll(async () => {
     .expect(200);
 });
 
+describe('GET /users?username', () => {
+  it('responds with a 200 and two users', async () => {
+    const response = await agent
+      .get('/users?username=username')
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+
+      .expect(200);
+    expect(response.body).toHaveLength(2);
+  });
+
+  it('responds with a 200 and one user', async () => {
+    const response = await agent
+      .get('/users?username=username2')
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+    expect(response.body).toHaveLength(1);
+  });
+
+  it('responds with a 200 and no users', async () => {
+    const response = await agent
+      .get('/users?username=invalidusername')
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+    expect(response.body).toHaveLength(0);
+  });
+});
+
 describe('POST /signup', () => {
   it('responds with a 200 and creates new user', (done) => {
     request(app)
