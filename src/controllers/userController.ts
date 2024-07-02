@@ -61,12 +61,10 @@ export const signUp: RequestHandler = async (req, res, next) => {
     });
   }
 
-  if (username.length > 36) {
-    return res
-      .status(400)
-      .json({
-        message: `Username is too long. Username must be less than ${maxUsernameLength}`,
-      });
+  if (username.length > maxUsernameLength) {
+    return res.status(400).json({
+      message: `Username is too long. Username must be less than ${maxUsernameLength}`,
+    });
   }
 
   if (email) {
