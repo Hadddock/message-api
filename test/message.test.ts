@@ -7,7 +7,7 @@ import mongoose from 'mongoose';
 
 const agent = request.agent(app);
 
-import { maxContentLength, maxImageUrlLength } from '../src/models/Message';
+import { maxContentLength, maxImageUrlLength } from '../src/interfaces/Message';
 let userOneId: mongoose.Types.ObjectId;
 let userTwoId: mongoose.Types.ObjectId;
 let conversation: mongoose.Types.ObjectId;

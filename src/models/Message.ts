@@ -3,20 +3,13 @@ import { Message as IMessage } from '../interfaces/Message';
 import validator from 'validator';
 // Schema
 
-const maxContentLength = 1024;
-const minContentLength = 1;
-
-const minImageUrlLength = 10;
-const maxImageUrlLength = 2048;
-const imageRegex = /\.(jpe?g|png|gif|bmp|webp)$/i;
-
-export {
+import {
   maxContentLength,
   minContentLength,
   maxImageUrlLength,
   minImageUrlLength,
   imageRegex,
-};
+} from '../interfaces/Message';
 
 const messageSchema = new Schema<IMessage>({
   content: {

@@ -15,7 +15,7 @@ import {
   maxImageUrlLength,
   minImageUrlLength,
   imageRegex,
-} from '../models/Message';
+} from '../interfaces/Message';
 
 export const postMessage: RequestHandler = async (req, res, next) => {
   if (!req.isAuthenticated()) {
