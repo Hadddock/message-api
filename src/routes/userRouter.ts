@@ -11,7 +11,7 @@ import asyncHandler from 'express-async-handler';
 
 const router = express.Router();
 
-router.get('/user', asyncHandler(getUser));
+router.get('/users/:user', asyncHandler(getUser));
 router.get('/users', asyncHandler(searchUser));
 router.post('/login', asyncHandler(login));
 router.get('/logout', asyncHandler(logout));

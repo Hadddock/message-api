@@ -3,6 +3,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import app from '../test/__mocks__/mockApp';
 import dbConnection from '../test/__mocks__/mockDatabase';
 import User from '../src/models/User';
+import mongoose from 'mongoose';
 import { signUp } from '../src/controllers/userController';
 import {
   maxBioLength,
@@ -13,6 +14,9 @@ import {
 } from '../src/interfaces/User';
 
 const agent = request.agent(app);
+const b = 3;
+let userOneId: mongoose.Types.ObjectId;
+let userTwoId: mongoose.Types.ObjectId;
 
 beforeAll(async () => {
   const mongoServer = await MongoMemoryServer.create({
@@ -39,12 +43,33 @@ beforeAll(async () => {
     })
     .expect(201);
 
+  const userOne = await User.findOne({ username: 'username' });
+  const userTwo = await User.findOne({ username: 'username2' });
+  if (userOne === null || userTwo === null) throw new Error('Users not found');
+
+  userOneId = userOne._id;
+  userTwoId = userTwo._id;
+
   await agent
     .post('/login')
     .send({ username: 'username', password: 'P@ssw0rd' })
     .set('Accept', 'application/json')
     .expect('Content-Type', /json/)
     .expect(200);
+});
+
+describe('GET /users/:user', () => {
+  it('responds with a 200 and user', async () => {
+    await agent.get(`/users/${userTwoId}`).expect(200);
+  });
+
+  it('responds with a 404 due to userId not corresponding to any user', async () => {
+    await agent.get(`/users/${new mongoose.Types.ObjectId()}`).expect(404);
+  });
+
+  it('responds with a 403 due to not being logged in', (done) => {
+    request(app).get(`/users/${userTwoId}`).expect(403, done);
+  });
 });
 
 describe('GET /users?username', () => {
