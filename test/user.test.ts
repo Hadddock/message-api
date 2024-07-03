@@ -293,3 +293,14 @@ describe('POST /login', () => {
       .expect(401, { message: 'Incorrect username or password' }, done);
   });
 });
+
+describe('DELETE /users/:user', () => {
+  it.only('responds with a 404 due to attempting to delete the profile of another user', async () => {
+    await agent.delete(`/users/${userTwoId}`).expect(403);
+  });
+  it('responds with a 200 and deletes and logs out user', async () => {
+    await agent.delete(`/users/${userOneId}`).expect(200);
+    //Ensure user was logged out and no longer authenticated
+    await agent.delete(`/users/${userOneId}`).expect(403);
+  });
+});

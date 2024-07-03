@@ -6,6 +6,7 @@ import {
   logout,
   signUp,
   searchUser,
+  deleteUser,
 } from '../controllers/userController';
 import asyncHandler from 'express-async-handler';
 
@@ -17,4 +18,5 @@ router.post('/login', asyncHandler(login));
 router.get('/logout', asyncHandler(logout));
 router.post('/signup', asyncHandler(signUp));
 router.get('/home', asyncHandler(home));
+router.delete('/users/:user', asyncHandler(deleteUser));
 export default router;

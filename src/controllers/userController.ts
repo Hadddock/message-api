@@ -153,6 +153,31 @@ export const logout: RequestHandler = async (req, res, next) => {
   });
 };
 
+export const deleteUser: RequestHandler = async (req, res, next) => {
+  if (!req.isAuthenticated()) {
+    return res.status(403).json({
+      message: 'Users must be logged in to delete their account.',
+    });
+  }
+
+  if (req.user.id !== req.params.user) {
+    return res.status(403).json({
+      message: 'Users can only delete their own account.',
+    });
+  }
+
+  try {
+    const { id } = req.params;
+
+    await User.deleteOne({ _id: id });
+    logout(req, res, () =>
+      res.status(200).json({ message: 'User deleted successfully' })
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const home: RequestHandler = async (req, res, next) => {
   if (req.isAuthenticated()) {
     res.json({ message: 'You are authenticated' });
