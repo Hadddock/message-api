@@ -100,6 +100,10 @@ describe('GET /users?username', () => {
       .expect(200);
     expect(response.body).toHaveLength(0);
   });
+
+  it('responds with a 403 due to not being logged in', (done) => {
+    request(app).get('/users?username=username2').expect(403, done);
+  });
 });
 
 describe('POST /signup', () => {

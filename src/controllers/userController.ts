@@ -104,6 +104,11 @@ export const signUp: RequestHandler = async (req, res, next) => {
 };
 
 export const searchUser: RequestHandler = async (req, res, next) => {
+  if (!req.isAuthenticated()) {
+    return res.status(403).json({
+      message: 'Users must be logged in to search for users.',
+    });
+  }
   const username = req.query.username;
 
   if (!username) {
