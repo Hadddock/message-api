@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   getUser,
+  putPins,
   home,
   login,
   logout,
@@ -13,6 +14,7 @@ import asyncHandler from 'express-async-handler';
 const router = express.Router();
 
 router.get('/users/:user', asyncHandler(getUser));
+router.put('/users/:user/pins', asyncHandler(putPins));
 router.get('/users', asyncHandler(searchUser));
 router.post('/login', asyncHandler(login));
 router.get('/logout', asyncHandler(logout));

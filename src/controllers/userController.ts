@@ -1,4 +1,5 @@
 import User from '../models/User';
+import Conversation from '../models/Conversation';
 import { RequestHandler } from 'express';
 import passport from 'passport';
 import { isStrongPassword, isEmail } from 'validator';
@@ -11,6 +12,50 @@ import {
   minUsernameLength,
   maxUsernameLength,
 } from '../interfaces/User';
+
+//toggle a conversation as pinned
+export const putPins: RequestHandler = async (req, res, next) => {
+  if (!req.isAuthenticated()) {
+    return res.status(403).json({
+      message: 'Users must be logged in to pin a conversation.',
+    });
+  }
+
+  const { conversationId } = req.body;
+  if (!conversationId) {
+    return res.status(400).json({ message: 'Conversation ID is required' });
+  }
+
+  const conversation = await Conversation.findById(conversationId).populate(
+    'users'
+  );
+  if (!conversation) {
+    return res.status(404).json({ message: 'Conversation not found' });
+  }
+
+  const user = await User.findById(req.user.id);
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  if (!conversation.users.some((u) => u.id === user.id)) {
+    console.log(`Conversation users: ${conversation.users.indexOf(user)}`);
+    console.log(`User: ${req.user.id}`);
+    return res
+      .status(403)
+      .json({ message: 'Users can only pin conversations they are a part of' });
+  }
+
+  if (user.pinnedConversations.includes(conversationId)) {
+    user.pinnedConversations = user.pinnedConversations.filter(
+      (id) => id !== conversationId
+    );
+  } else {
+    user.pinnedConversations.push(conversationId);
+  }
+  user.save();
+  return res.status(200).json({ message: 'Conversation pinned successfully' });
+};
 
 export const getUser: RequestHandler = async (req, res, next) => {
   if (!req.isAuthenticated()) {

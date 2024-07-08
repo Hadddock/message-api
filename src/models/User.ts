@@ -39,7 +39,14 @@ const userSchema = new Schema<IUser>({
   userProfile: { type: Object },
   bio: { type: String, required: true, default: 'Hello!', max: maxBioLength },
   joinTime: { type: Date, required: true, default: Date.now() },
-  pinnedConversations: [{ type: Schema.Types.ObjectId, ref: 'Conversation' }],
+  pinnedConversations: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'Conversation',
+      default: [],
+      required: true,
+    },
+  ],
 });
 
 userSchema.methods.getPublicProfile = function () {

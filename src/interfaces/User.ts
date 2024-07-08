@@ -8,7 +8,7 @@ export interface User {
   userProfile?: Object;
   bio: string;
   joinTime: Date;
-  pinnedConversations?: Array<Conversation>;
+  pinnedConversations: Array<Conversation>;
   getPublicProfile(): User;
 }
 
