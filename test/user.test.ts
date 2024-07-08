@@ -17,6 +17,7 @@ const agent = request.agent(app);
 const b = 3;
 let userOneId: mongoose.Types.ObjectId;
 let userTwoId: mongoose.Types.ObjectId;
+let userThreeId: mongoose.Types.ObjectId;
 
 beforeAll(async () => {
   const mongoServer = await MongoMemoryServer.create({
@@ -43,12 +44,23 @@ beforeAll(async () => {
     })
     .expect(201);
 
+  await agent
+    .post('/signup')
+    .send({
+      username: 'username3',
+      password: 'P@ssw0rd',
+    })
+    .expect(201);
+
   const userOne = await User.findOne({ username: 'username' });
   const userTwo = await User.findOne({ username: 'username2' });
-  if (userOne === null || userTwo === null) throw new Error('Users not found');
+  const userThree = await User.findOne({ username: 'username3' });
+  if (userOne === null || userTwo === null || userThree === null)
+    throw new Error('Users not found');
 
   userOneId = userOne._id;
   userTwoId = userTwo._id;
+  userThreeId = userThree._id;
 
   await agent
     .post('/login')
@@ -56,6 +68,130 @@ beforeAll(async () => {
     .set('Accept', 'application/json')
     .expect('Content-Type', /json/)
     .expect(200);
+});
+describe('PUT /users/:user/pins', () => {
+  let conversationId: mongoose.Types.ObjectId;
+
+  beforeAll(async () => {
+    //create a new conversation
+    const conversation = await agent
+      .post('/conversation')
+      .send({
+        name: 'new conversation',
+        users: [userOneId, userTwoId],
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(201);
+    conversationId = conversation.body._id;
+  });
+
+  beforeEach(async () => {
+    await agent.get('/logout').expect(200, 'logged out');
+    await agent
+      .post('/login')
+      .send({ username: 'username', password: 'P@ssw0rd' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+  });
+
+  afterEach(async () => {
+    await agent.get('/logout').expect(200, 'logged out');
+    await agent
+      .post('/login')
+      .send({ username: 'username', password: 'P@ssw0rd' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+  });
+
+  it('responds with a 200 and pins conversation', async () => {
+    await agent
+      .put(`/users/${userOneId}/pins`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .send({ conversationId: conversationId })
+      .expect(200);
+  });
+
+  it('responds with a 400 due to conversationId not being included', async () => {
+    //create a new conversation
+    await agent.get('/logout').expect(200, 'logged out');
+
+    await agent
+      .put(`/users/${userOneId}/pins`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+
+      .expect(400);
+  });
+
+  it('responds with a 404 due to conversationId not being found', async () => {
+    //create a new conversation
+    await agent.get('/logout').expect(200, 'logged out');
+
+    await agent
+      .put(`/users/${userOneId}/pins`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .send({ conversationId: new mongoose.Types.ObjectId() })
+      .expect(400);
+  });
+
+  it('responds with a 404 due to user not being found', async () => {
+    //create a new conversation
+    await agent.get('/logout').expect(200, 'logged out');
+
+    await agent
+      .put(`/users/${userOneId}/pins`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .send({ conversationId: new mongoose.Types.ObjectId() })
+      .expect(400);
+  });
+
+  it('responds with a 403 due to user not being logged in', async () => {
+    //create a new conversation
+    await agent.get('/logout').expect(200, 'logged out');
+
+    await agent
+      .put(`/users/${userOneId}/pins`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .send({ conversationId: conversationId })
+      .expect(403);
+  });
+
+  it('responds with a 403 due to user not being a part of the conversation', async () => {
+    //create a new conversation
+    const conversation = await agent
+      .post('/conversation')
+      .send({
+        name: 'new conversation',
+        users: [userOneId, userTwoId],
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(201);
+    const conversationId = conversation.body._id;
+
+    //logout and login as user3
+    await agent.get('/logout').expect(200, 'logged out');
+    await agent
+      .post('/login')
+      .send({ username: 'username3', password: 'P@ssw0rd' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+    //attempt to pin conversation the user is not a part of
+    await agent
+      .put(`/users/${userThreeId}/pins`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .send({ conversationId: conversationId })
+      .expect(403);
+  });
 });
 
 describe('GET /users/:user', () => {
@@ -295,7 +431,7 @@ describe('POST /login', () => {
 });
 
 describe('DELETE /users/:user', () => {
-  it.only('responds with a 404 due to attempting to delete the profile of another user', async () => {
+  it('responds with a 404 due to attempting to delete the profile of another user', async () => {
     await agent.delete(`/users/${userTwoId}`).expect(403);
   });
   it('responds with a 200 and deletes and logs out user', async () => {
