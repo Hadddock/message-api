@@ -162,10 +162,20 @@ export const searchUser: RequestHandler = async (req, res, next) => {
   }
   const username = req.query.username;
 
+  let page = req.query.page || 1;
+  let limit = req.query.limit || 10;
+
+  if (typeof page !== 'number' || typeof limit !== 'number') {
+    page = 1;
+    limit = 10;
+  }
+
   if (!username) {
     return res.status(400).json({ message: 'Username is required' });
   }
-  const users = await User.find({ username: new RegExp('^' + username, 'i') });
+  const users = await User.find({ username: new RegExp('^' + username, 'i') })
+    .limit(limit)
+    .skip((page - 1) * limit);
 
   const publicProfiles = users.map((user) => user.getPublicProfile());
 
