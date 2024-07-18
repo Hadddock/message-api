@@ -15,10 +15,12 @@ import {
 
 //toggle a conversation as pinned
 export const putPins: RequestHandler = async (req, res, next) => {
-  const { conversationId, pin } = req.body;
+  let { conversationId, pin } = req.body;
   if (!conversationId) {
     return res.status(400).json({ message: 'Conversation ID is required' });
   }
+
+  pin = typeof pin === 'undefined' ? true : pin;
 
   const conversation = await Conversation.findById(conversationId).populate(
     'users'
@@ -58,8 +60,6 @@ export const putPins: RequestHandler = async (req, res, next) => {
 };
 
 export const getUser: RequestHandler = async (req, res, next) => {
-
-
   const userId = req.params.user;
 
   if (!userId) {
@@ -145,7 +145,6 @@ export const signUp: RequestHandler = async (req, res, next) => {
 };
 
 export const searchUser: RequestHandler = async (req, res, next) => {
-
   const username = req.query.username;
 
   let page = req.query.page || 1;
@@ -201,7 +200,6 @@ export const logout: RequestHandler = async (req, res, next) => {
 };
 
 export const deleteUser: RequestHandler = async (req, res, next) => {
-
   if (req.user?.id !== req.params.user) {
     return res.status(403).json({
       message: 'Users can only delete their own account.',
