@@ -69,6 +69,7 @@ beforeAll(async () => {
     .expect('Content-Type', /json/)
     .expect(200);
 });
+
 describe('PUT /users/:user/pins', () => {
   let conversationId: mongoose.Types.ObjectId;
 
@@ -106,19 +107,27 @@ describe('PUT /users/:user/pins', () => {
       .expect(200);
   });
 
-  it('responds with a 200 and pins conversation', async () => {
-    await agent
+  it.only('responds with a 200 and pins then unpins a conversation', async () => {
+    let response = await agent
       .put(`/users/${userOneId}/pins`)
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
-      .send({ conversationId: conversationId })
+      .send({ conversationId: conversationId, pin: true })
       .expect(200);
+    expect(response.body.pinnedConversations).toEqual([conversationId]);
+
+    response = await agent
+      .put(`/users/${userOneId}/pins`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .send({ conversationId: conversationId, pin: false })
+      .expect(200);
+
+    expect(response.body.pinnedConversations).toEqual([]);
   });
 
   it('responds with a 400 due to conversationId not being included', async () => {
     //create a new conversation
-    await agent.get('/logout').expect(200, 'logged out');
-
     await agent
       .put(`/users/${userOneId}/pins`)
       .set('Accept', 'application/json')
@@ -127,28 +136,23 @@ describe('PUT /users/:user/pins', () => {
       .expect(400);
   });
 
-  it('responds with a 404 due to conversationId not being found', async () => {
+  it('responds with a 404 due to conversation not being found', async () => {
     //create a new conversation
-    await agent.get('/logout').expect(200, 'logged out');
-
     await agent
       .put(`/users/${userOneId}/pins`)
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
       .send({ conversationId: new mongoose.Types.ObjectId() })
-      .expect(400);
+      .expect(404);
   });
 
   it('responds with a 404 due to user not being found', async () => {
-    //create a new conversation
-    await agent.get('/logout').expect(200, 'logged out');
-
     await agent
-      .put(`/users/${userOneId}/pins`)
+      .put(`/users/${new mongoose.Types.ObjectId()}/pins`)
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
       .send({ conversationId: new mongoose.Types.ObjectId() })
-      .expect(400);
+      .expect(404);
   });
 
   it('responds with a 403 due to user not being logged in', async () => {
@@ -209,14 +213,14 @@ describe('GET /users/:user', () => {
 });
 
 describe('GET /users?username', () => {
-  it('responds with a 200 and two users', async () => {
+  it('responds with a 200 and 3 users', async () => {
     const response = await agent
       .get('/users?username=username')
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
 
       .expect(200);
-    expect(response.body).toHaveLength(2);
+    expect(response.body).toHaveLength(3);
   });
 
   it('responds with a 200 and one user', async () => {

@@ -21,7 +21,7 @@ export const putPins: RequestHandler = async (req, res, next) => {
     });
   }
 
-  const { conversationId } = req.body;
+  const { conversationId, pin } = req.body;
   if (!conversationId) {
     return res.status(400).json({ message: 'Conversation ID is required' });
   }
@@ -39,22 +39,28 @@ export const putPins: RequestHandler = async (req, res, next) => {
   }
 
   if (!conversation.users.some((u) => u.id === user.id)) {
-    console.log(`Conversation users: ${conversation.users.indexOf(user)}`);
-    console.log(`User: ${req.user.id}`);
     return res
       .status(403)
       .json({ message: 'Users can only pin conversations they are a part of' });
   }
 
-  if (user.pinnedConversations.includes(conversationId)) {
-    user.pinnedConversations = user.pinnedConversations.filter(
-      (id) => id !== conversationId
-    );
-  } else {
+  if (pin) {
     user.pinnedConversations.push(conversationId);
+  } else {
+    user.pinnedConversations = user.pinnedConversations.filter(
+      (id) => id != conversationId
+    );
   }
   user.save();
-  return res.status(200).json({ message: 'Conversation pinned successfully' });
+  const foundUser = await User.findById(req.user.id);
+  if (foundUser) {
+    console.log(foundUser.pinnedConversations);
+  }
+
+  return res.status(200).json({
+    message: 'Conversation pinned successfully',
+    pinnedConversations: user.pinnedConversations,
+  });
 };
 
 export const getUser: RequestHandler = async (req, res, next) => {
