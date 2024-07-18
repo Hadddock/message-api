@@ -107,7 +107,7 @@ describe('PUT /users/:user/pins', () => {
       .expect(200);
   });
 
-  it.only('responds with a 200 and pins then unpins a conversation', async () => {
+  it('responds with a 200 and pins then unpins a conversation', async () => {
     let response = await agent
       .put(`/users/${userOneId}/pins`)
       .set('Accept', 'application/json')

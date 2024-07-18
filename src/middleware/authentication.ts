@@ -3,6 +3,7 @@ import User from '../models/User';
 import { User as IUser } from './../interfaces/User';
 import passport from 'passport';
 import bcrypt from 'bcrypt';
+import { Request, Response, NextFunction } from 'express';
 
 //add properties to passport user interface
 declare global {
@@ -49,3 +50,17 @@ passport.deserializeUser(async (id, done) => {
     done(err);
   }
 });
+
+export const checkAuthentication = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  if (req.isAuthenticated()) {
+    return next();
+  } else {
+    return res.status(403).json({
+      message: 'User must be logged in to perform this action.',
+    });
+  }
+};

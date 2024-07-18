@@ -15,12 +15,6 @@ import {
 
 //toggle a conversation as pinned
 export const putPins: RequestHandler = async (req, res, next) => {
-  if (!req.isAuthenticated()) {
-    return res.status(403).json({
-      message: 'Users must be logged in to pin a conversation.',
-    });
-  }
-
   const { conversationId, pin } = req.body;
   if (!conversationId) {
     return res.status(400).json({ message: 'Conversation ID is required' });
@@ -33,7 +27,7 @@ export const putPins: RequestHandler = async (req, res, next) => {
     return res.status(404).json({ message: 'Conversation not found' });
   }
 
-  const user = await User.findById(req.user.id);
+  const user = await User.findById(req.user?.id);
   if (!user) {
     return res.status(404).json({ message: 'User not found' });
   }
@@ -52,7 +46,7 @@ export const putPins: RequestHandler = async (req, res, next) => {
     );
   }
   user.save();
-  const foundUser = await User.findById(req.user.id);
+  const foundUser = await User.findById(req.user?.id);
   if (foundUser) {
     console.log(foundUser.pinnedConversations);
   }
@@ -64,11 +58,7 @@ export const putPins: RequestHandler = async (req, res, next) => {
 };
 
 export const getUser: RequestHandler = async (req, res, next) => {
-  if (!req.isAuthenticated()) {
-    return res.status(403).json({
-      message: 'Users must be logged in to post messages.',
-    });
-  }
+
 
   const userId = req.params.user;
 
@@ -155,11 +145,7 @@ export const signUp: RequestHandler = async (req, res, next) => {
 };
 
 export const searchUser: RequestHandler = async (req, res, next) => {
-  if (!req.isAuthenticated()) {
-    return res.status(403).json({
-      message: 'Users must be logged in to search for users.',
-    });
-  }
+
   const username = req.query.username;
 
   let page = req.query.page || 1;
@@ -215,13 +201,8 @@ export const logout: RequestHandler = async (req, res, next) => {
 };
 
 export const deleteUser: RequestHandler = async (req, res, next) => {
-  if (!req.isAuthenticated()) {
-    return res.status(403).json({
-      message: 'Users must be logged in to delete their account.',
-    });
-  }
 
-  if (req.user.id !== req.params.user) {
+  if (req.user?.id !== req.params.user) {
     return res.status(403).json({
       message: 'Users can only delete their own account.',
     });
