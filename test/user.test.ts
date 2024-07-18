@@ -32,6 +32,7 @@ beforeAll(async () => {
     .send({
       username: 'username',
       password: 'P@ssw0rd',
+      confirmPassword: 'P@ssw0rd',
       email: 'abcdefgh@gmail.com',
     })
     .expect(201);
@@ -41,6 +42,7 @@ beforeAll(async () => {
     .send({
       username: 'username2',
       password: 'P@ssw0rd',
+      confirmPassword: 'P@ssw0rd',
     })
     .expect(201);
 
@@ -49,6 +51,7 @@ beforeAll(async () => {
     .send({
       username: 'username3',
       password: 'P@ssw0rd',
+      confirmPassword: 'P@ssw0rd',
     })
     .expect(201);
 
@@ -167,6 +170,24 @@ describe('PUT /users/:user/pins', () => {
       .expect(403);
   });
 
+  it('responds with a 400 due to conversationId not being a string', async () => {
+    await agent
+      .put(`/users/${userOneId}/pins`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .send({ conversationId: { conversationId } })
+      .expect(400);
+  });
+
+  it('responds with a 400 due to pin not being a boolean', async () => {
+    await agent
+      .put(`/users/${userOneId}/pins`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .send({ conversationId: conversationId, pin: { true: true } })
+      .expect(400);
+  });
+
   it('responds with a 403 due to user not being a part of the conversation', async () => {
     //create a new conversation
     const conversation = await agent
@@ -193,7 +214,7 @@ describe('PUT /users/:user/pins', () => {
       .put(`/users/${userThreeId}/pins`)
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
-      .send({ conversationId: conversationId })
+      .send({ conversationId: conversationId, pin: true })
       .expect(403);
   });
 });
@@ -253,6 +274,7 @@ describe('POST /signup', () => {
       .send({
         username: 'newuser',
         password: 'P@ssw0rd',
+        confirmPassword: 'P@ssw0rd',
       })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
@@ -265,6 +287,7 @@ describe('POST /signup', () => {
       .send({
         username: 'newuser2',
         password: 'P@ssw0rd',
+        confirmPassword: 'P@ssw0rd',
         email: 'testemail@gmail.com',
       })
       .set('Accept', 'application/json')
@@ -275,7 +298,11 @@ describe('POST /signup', () => {
   it('responds with a 400 username already taken', (done) => {
     request(app)
       .post('/signup')
-      .send({ username: 'username', password: 'P@ssw0rd' })
+      .send({
+        username: 'username',
+        password: 'P@ssw0rd',
+        confirmPassword: 'P@ssw0rd',
+      })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
       .expect(400, { message: 'Username already taken' }, done);
@@ -287,17 +314,22 @@ describe('POST /signup', () => {
       .send({
         username: 'username',
         password: 'P@ssw0rd',
+        confirmPassword: 'P@ssw0rd',
         bio: 'a'.repeat(maxBioLength + 1),
       })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
-      .expect(400, { message: 'Username already taken' }, done);
+      .expect(400, done);
   });
 
   it('responds with a 400 password not strong enough due to lacking an uppercase character', (done) => {
     request(app)
       .post('/signup')
-      .send({ username: 'usernametwo', password: 'p@ssw0rd' })
+      .send({
+        username: 'usernametwo',
+        password: 'p@ssw0rd',
+        confirmPassword: 'p@ssw0rd',
+      })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
       .expect(400, done);
@@ -306,7 +338,11 @@ describe('POST /signup', () => {
   it('responds with a 400 password not strong enough due to lacking a lowercase character', (done) => {
     request(app)
       .post('/signup')
-      .send({ username: 'usernametwo', password: 'P@SSW0RD' })
+      .send({
+        username: 'usernametwo',
+        password: 'P@SSW0RD',
+        confirmPassword: 'P@SSW0RD',
+      })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
       .expect(400, done);
@@ -315,7 +351,11 @@ describe('POST /signup', () => {
   it('responds with a 400 password not strong enough due to lacking a symbol', (done) => {
     request(app)
       .post('/signup')
-      .send({ username: 'usernametwo', password: 'Passw0rd' })
+      .send({
+        username: 'usernametwo',
+        password: 'Passw0rd',
+        confirmPassword: 'Passw0rd',
+      })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
       .expect(400, done);
@@ -324,7 +364,11 @@ describe('POST /signup', () => {
   it('responds with a 400 password not strong enough due to lacking a number', (done) => {
     request(app)
       .post('/signup')
-      .send({ username: 'usernametwo', password: 'P@ssword' })
+      .send({
+        username: 'usernametwo',
+        password: 'P@ssword',
+        confirmPassword: 'P@ssword',
+      })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
       .expect(400, done);
@@ -336,6 +380,7 @@ describe('POST /signup', () => {
       .send({
         username: 'usernametwo',
         password: 'P@ssw0r' + 'd'.repeat(maxPasswordLength - 6),
+        confirmPassword: 'P@ssw0r' + 'd'.repeat(maxPasswordLength - 6),
       })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
@@ -348,6 +393,7 @@ describe('POST /signup', () => {
       .send({
         username: 'us',
         password: 'P@ssw0rd',
+        confirmPassword: 'P@ssw0rd',
       })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
@@ -360,6 +406,7 @@ describe('POST /signup', () => {
       .send({
         username: 'uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu',
         password: 'P@ssw0rd',
+        confirmPassword: 'P@ssw0rd',
       })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
@@ -372,7 +419,21 @@ describe('POST /signup', () => {
       .send({
         username: 'usernametwo',
         password: 'P@ssw0rd',
+        confirmPassword: 'P@ssw0rd',
         email: 'notanemail',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 due to password and confirmPassword not matching', (done) => {
+    request(app)
+      .post('/signup')
+      .send({
+        username: 'usernametwo',
+        password: 'P@ssw0rd',
+        confirmPassword: 'P@ssw0rb',
       })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
@@ -435,9 +496,10 @@ describe('POST /login', () => {
 });
 
 describe('DELETE /users/:user', () => {
-  it('responds with a 404 due to attempting to delete the profile of another user', async () => {
-    await agent.delete(`/users/${userTwoId}`).expect(403);
+  it('responds with a 400 due to attempting to delete the profile of another user', async () => {
+    await agent.delete(`/users/${userTwoId}`).expect(400);
   });
+
   it('responds with a 200 and deletes and logs out user', async () => {
     await agent.delete(`/users/${userOneId}`).expect(200);
     //Ensure user was logged out and no longer authenticated

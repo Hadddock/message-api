@@ -10,16 +10,43 @@ import {
   deleteUser,
 } from '../controllers/userController';
 import asyncHandler from 'express-async-handler';
+import {
+  validatePutPins,
+  validateDeleteUser,
+  validateGetUser,
+  validateSearchUser,
+  validateSignUp,
+} from '../middleware/validators/userValidator';
 import { checkAuthentication } from '../middleware/authentication';
 
 const router = express.Router();
 
-router.get('/users/:user', checkAuthentication, asyncHandler(getUser));
-router.put('/users/:user/pins', checkAuthentication, asyncHandler(putPins));
-router.get('/users', checkAuthentication, asyncHandler(searchUser));
+router.get(
+  '/users/:user',
+  checkAuthentication,
+  validateGetUser,
+  asyncHandler(getUser)
+);
+router.put(
+  '/users/:user/pins',
+  checkAuthentication,
+  validatePutPins,
+  asyncHandler(putPins)
+);
+router.get(
+  '/users',
+  checkAuthentication,
+  validateSearchUser,
+  asyncHandler(searchUser)
+);
 router.post('/login', asyncHandler(login));
 router.get('/logout', asyncHandler(logout));
-router.post('/signup', asyncHandler(signUp));
+router.post('/signup', validateSignUp, asyncHandler(signUp));
 router.get('/home', asyncHandler(home));
-router.delete('/users/:user', checkAuthentication, asyncHandler(deleteUser));
+router.delete(
+  '/users/:user',
+  checkAuthentication,
+  validateDeleteUser,
+  asyncHandler(deleteUser)
+);
 export default router;
