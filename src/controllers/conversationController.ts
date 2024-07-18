@@ -14,12 +14,6 @@ import {
 } from '../interfaces/Conversation';
 
 export const postConversation: RequestHandler = async (req, res, next) => {
-  if (!req.isAuthenticated()) {
-    return res.status(403).json({
-      message: 'Users must be logged in to post conversations.',
-    });
-  }
-
   let { name, users }: ConversationRequestBody = req.body;
   name = String(name);
 

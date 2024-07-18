@@ -2,7 +2,7 @@ import User from '../models/User';
 import Conversation from '../models/Conversation';
 import Message from '../models/Message';
 import { RequestHandler } from 'express';
-import validator = require('validator');
+import validator from 'validator';
 
 type MessageRequestBody = {
   content: string;
@@ -18,12 +18,6 @@ import {
 } from '../interfaces/Message';
 
 export const postMessage: RequestHandler = async (req, res, next) => {
-  if (!req.isAuthenticated()) {
-    return res.status(403).json({
-      message: 'Users must be logged in to post messages.',
-    });
-  }
-
   let { content, imageUrl }: MessageRequestBody = req.body;
   if (content) {
     content = content.trim();
@@ -38,7 +32,7 @@ export const postMessage: RequestHandler = async (req, res, next) => {
   }
 
   const conversation = req.params.conversation;
-  const user = req.user.id;
+  const user = req.user?.id;
 
   if (!imageUrl && !content) {
     return res.status(400).json({
