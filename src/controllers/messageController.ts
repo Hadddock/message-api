@@ -2,61 +2,14 @@ import User from '../models/User';
 import Conversation from '../models/Conversation';
 import Message from '../models/Message';
 import { RequestHandler } from 'express';
-import validator from 'validator';
-
-type MessageRequestBody = {
-  content: string;
-  imageUrl: string;
-};
-
-import {
-  maxContentLength,
-  minContentLength,
-  maxImageUrlLength,
-  minImageUrlLength,
-  imageRegex,
-} from '../interfaces/Message';
 
 export const postMessage: RequestHandler = async (req, res, next) => {
-  let { content, imageUrl }: MessageRequestBody = req.body;
-  if (content) {
-    content = content.trim();
-  }
+  let { content, imageUrl } = req.body;
 
-  if (imageUrl) {
-    if (!validator.isURL(imageUrl) || !imageRegex.test(imageUrl)) {
-      return res.status(400).json({
-        message: 'Invalid image URL. URL must be a valid image URL',
-      });
-    }
-  }
+  content = content ? content.trim() : content;
 
   const conversation = req.params.conversation;
   const user = req.user?.id;
-
-  if (!imageUrl && !content) {
-    return res.status(400).json({
-      message: 'Invalid message. Messages must contain content or an image URL',
-    });
-  }
-
-  if (
-    content &&
-    (content.length < minContentLength || content.length > maxContentLength)
-  ) {
-    return res.status(400).json({
-      message: `Invalid message content. Content must be between ${minContentLength} and ${maxContentLength} characters long`,
-    });
-  }
-
-  if (
-    imageUrl &&
-    (imageUrl.length < minImageUrlLength || imageUrl.length > maxImageUrlLength)
-  ) {
-    return res.status(400).json({
-      message: `Invalid image URL. URL must be between ${minImageUrlLength} and ${maxImageUrlLength} characters long`,
-    });
-  }
 
   try {
     const [foundConversation, foundUser] = await Promise.all([

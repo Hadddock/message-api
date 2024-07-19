@@ -25,6 +25,7 @@ beforeAll(async () => {
     .send({
       username: 'username',
       password: 'P@ssw0rd',
+      confirmPassword: 'P@ssw0rd',
     })
     .expect(201);
 
@@ -33,6 +34,7 @@ beforeAll(async () => {
     .send({
       username: 'username2',
       password: 'P@ssw0rd',
+      confirmPassword: 'P@ssw0rd',
     })
     .expect(201);
 
@@ -65,6 +67,7 @@ describe('POST /conversation', () => {
       .post(`/conversation/${conversation}/message`)
       .send({
         content: 'Hello',
+        imageUrl: 'https://en.wikipedia.org/static/images/icons/wikipedia.png',
       })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
