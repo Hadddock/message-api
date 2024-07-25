@@ -149,10 +149,10 @@ export const signUp: RequestHandler = async (req, res, next) => {
 export const searchUser: RequestHandler = async (req, res, next) => {
   const username = req.query.username;
 
-  let page = req.query.page || 1;
-  let limit = req.query.limit || 10;
+  let page = Number(req.query.page) || 1;
+  let limit = Number(req.query.limit) || 10;
 
-  if (typeof page !== 'number' || typeof limit !== 'number') {
+  if (isNaN(page) || isNaN(limit)) {
     page = 1;
     limit = 10;
   }
