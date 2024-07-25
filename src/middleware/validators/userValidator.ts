@@ -10,7 +10,11 @@ import {
 } from '../../interfaces/User';
 
 export const validateSearchUser = [
-  check('username').isString().isLength({ max: maxUsernameLength }),
+  check('username')
+    .isString()
+    .notEmpty()
+    .trim()
+    .isLength({ max: maxUsernameLength }),
   check('page').optional().isInt({ min: 1 }),
   check('limit').optional().isInt({ min: 1, max: 100 }),
   (req: Request, res: Response, next: NextFunction) => {
