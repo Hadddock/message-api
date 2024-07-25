@@ -84,7 +84,9 @@ type MessageRequestBody = {
 export const signUp: RequestHandler = async (req, res, next) => {
   const { username, password, email, bio }: MessageRequestBody = req.body;
 
-  const existingUser = await User.findOne({ username: username });
+  const existingUser = await User.findOne({
+    username: new RegExp('^' + username + '$', 'i'),
+  });
 
   if (existingUser) {
     return res.status(400).json({

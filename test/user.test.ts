@@ -308,6 +308,19 @@ describe('POST /signup', () => {
       .expect(400, { message: 'Username already taken' }, done);
   });
 
+  it('responds with a 400 username already taken with different casing', (done) => {
+    request(app)
+      .post('/signup')
+      .send({
+        username: 'USERNAME',
+        password: 'P@ssw0rd',
+        confirmPassword: 'P@ssw0rd',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, { message: 'Username already taken' }, done);
+  });
+
   it('responds with a 400 bio too long', (done) => {
     request(app)
       .post('/signup')
