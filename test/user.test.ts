@@ -410,7 +410,7 @@ describe('GET /users/:user', () => {
 });
 
 describe('POST /signup', () => {
-  it('responds with a 200 and creates new user', (done) => {
+  it('responds with a 201 and creates new user', (done) => {
     request(app)
       .post('/signup')
       .send({
