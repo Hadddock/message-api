@@ -74,15 +74,8 @@ export const getUser: RequestHandler = async (req, res, next) => {
   res.status(200).json(user.getPublicProfile());
 };
 
-type MessageRequestBody = {
-  username: string;
-  password: string;
-  email?: string;
-  bio?: string;
-};
-
 export const signUp: RequestHandler = async (req, res, next) => {
-  const { username, password, email, bio }: MessageRequestBody = req.body;
+  const { username, password, email, bio } = req.body;
 
   const existingUser = await User.findOne({
     username: new RegExp('^' + username + '$', 'i'),
