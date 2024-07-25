@@ -37,23 +37,16 @@ beforeAll(async () => {
     })
     .expect(201);
 
-  await agent
-    .post('/signup')
-    .send({
-      username: 'username2',
-      password: 'P@ssw0rd',
-      confirmPassword: 'P@ssw0rd',
-    })
-    .expect(201);
-
-  await agent
-    .post('/signup')
-    .send({
-      username: 'username3',
-      password: 'P@ssw0rd',
-      confirmPassword: 'P@ssw0rd',
-    })
-    .expect(201);
+  for (let i = 2; i <= 11; i++) {
+    await agent
+      .post('/signup')
+      .send({
+        username: 'username' + i,
+        password: 'P@ssw0rd',
+        confirmPassword: 'P@ssw0rd',
+      })
+      .expect(201);
+  }
 
   const userOne = await User.findOne({ username: 'username' });
   const userTwo = await User.findOne({ username: 'username2' });
@@ -71,6 +64,189 @@ beforeAll(async () => {
     .set('Accept', 'application/json')
     .expect('Content-Type', /json/)
     .expect(200);
+});
+
+describe('GET /users', () => {
+  it('searches for a user successfully with an exact unique username', async () => {
+    const users = await agent
+      .get('/users')
+      .query({ username: 'username3' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    expect(users.body.length).toBe(1);
+    expect(users.body[0].username).toBe('username3');
+  });
+
+  it('searches for a user case insensitively with an exact unique username', async () => {
+    const users = await agent
+      .get('/users')
+      .query({ username: 'uSeRnAme3' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    expect(users.body.length).toBe(1);
+    expect(users.body[0].username).toBe('username3');
+  });
+
+  it('responds with a 200 and no users', async () => {
+    const users = await agent
+      .get('/users')
+      .query({ username: 'nobodyHasThisUsername' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+    expect(users.body).toHaveLength(0);
+  });
+
+  it('searches for users with usernames starting with user, and limits to 10 users by default', async () => {
+    const users = await agent
+      .get('/users')
+      .query({ username: 'user' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    expect(users.body.length).toBe(10);
+  });
+
+  it('returns distinct responses using limit and page', async () => {
+    const usersPageOne = await agent
+      .get('/users')
+      .query({ username: 'user', limit: 1 })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    const usersPageTwo = await agent
+      .get('/users')
+      .query({ username: 'user', limit: 1, page: 2 })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    expect(usersPageOne.body.length).toBe(1);
+    expect(usersPageTwo.body.length).toBe(1);
+
+    expect(usersPageOne.body[0].username).not.toBe(
+      usersPageTwo.body[0].username
+    );
+  });
+
+  it('searches for users with usernames starting with user, and limits results to 1', async () => {
+    const users = await agent
+      .get('/users')
+      .query({ username: 'user', limit: 1 })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    expect(users.body.length).toBe(1);
+  });
+
+  it('searches for users with usernames starting with user, and skips to second page', async () => {
+    const users = await agent
+      .get('/users')
+      .query({ username: 'user', page: 2 })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    expect(users.body.length).toBe(1);
+    expect(users.body[0].username).toBe('username11');
+  });
+
+  it('returns 400 due to limit being < 1', async () => {
+    await agent
+      .get('/users')
+      .query({ username: 'user', limit: 0 })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
+
+  it('returns 400 due to username not being provided', async () => {
+    await agent
+      .get('/users')
+      .query({ username: 'user', limit: 0 })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
+
+  it('returns 400 due to page being < 1', async () => {
+    await agent
+      .get('/users')
+      .query({ username: 'user', page: 0 })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
+
+  it('returns 400 due to limit being > 100', async () => {
+    await agent
+      .get('/users')
+      .query({ username: 'user', limit: 101 })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
+
+  it('responds with a 403 due to not being logged in', (done) => {
+    request(app)
+      .get('/users')
+      .query({ username: 'user' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(403, done);
+  });
+
+  it('responds with a 400 due to username not being a string', (done) => {
+    agent
+      .get('/users')
+      .query({ username: { user: 'user' } })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 due to limit not being a number', (done) => {
+    agent
+      .get('/users')
+      .query({ username: 'user', limit: 'ten' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 due to page not being a number', (done) => {
+    agent
+      .get('/users')
+      .query({ username: 'user', page: 'one' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 due to empty username', (done) => {
+    agent
+      .get('/users')
+      .query({ username: '' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 due to whitespace only username', (done) => {
+    agent
+      .get('/users')
+      .query({ username: '  ' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
 });
 
 describe('PUT /users/:user/pins', () => {
@@ -230,40 +406,6 @@ describe('GET /users/:user', () => {
 
   it('responds with a 403 due to not being logged in', (done) => {
     request(app).get(`/users/${userTwoId}`).expect(403, done);
-  });
-});
-
-describe('GET /users?username', () => {
-  it('responds with a 200 and 3 users', async () => {
-    const response = await agent
-      .get('/users?username=username')
-      .set('Accept', 'application/json')
-      .expect('Content-Type', /json/)
-
-      .expect(200);
-    expect(response.body).toHaveLength(3);
-  });
-
-  it('responds with a 200 and one user', async () => {
-    const response = await agent
-      .get('/users?username=username2')
-      .set('Accept', 'application/json')
-      .expect('Content-Type', /json/)
-      .expect(200);
-    expect(response.body).toHaveLength(1);
-  });
-
-  it('responds with a 200 and no users', async () => {
-    const response = await agent
-      .get('/users?username=invalidusername')
-      .set('Accept', 'application/json')
-      .expect('Content-Type', /json/)
-      .expect(200);
-    expect(response.body).toHaveLength(0);
-  });
-
-  it('responds with a 403 due to not being logged in', (done) => {
-    request(app).get('/users?username=username2').expect(403, done);
   });
 });
 
