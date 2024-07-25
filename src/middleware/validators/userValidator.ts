@@ -12,7 +12,7 @@ import {
 export const validateSearchUser = [
   check('username').isString().isLength({ max: maxUsernameLength }),
   check('page').optional().isInt({ min: 1 }),
-  check('limit').optional().isInt({ min: 1 }),
+  check('limit').optional().isInt({ min: 1, max: 100 }),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
