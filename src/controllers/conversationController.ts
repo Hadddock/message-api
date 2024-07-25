@@ -6,43 +6,10 @@ interface ConversationRequestBody {
   name: string;
   users: string[];
 }
-import {
-  maxUsers,
-  minUsers,
-  minNameLength,
-  maxNameLength,
-} from '../interfaces/Conversation';
 
 export const postConversation: RequestHandler = async (req, res, next) => {
-  let { name, users }: ConversationRequestBody = req.body;
-  name = String(name);
+  let { name, users } = req.body;
 
-  if (
-    !Array.isArray(users) ||
-    !users.every((user) => typeof user === 'string')
-  ) {
-    return res.status(400).json({
-      message: 'Invalid users. Users must be an array of strings.',
-    });
-  }
-
-  if (typeof name !== 'string') {
-    return res.status(400).json({
-      message: 'Invalid conversation name. Name must be a string.',
-    });
-  }
-
-  if (name.length < minNameLength || name.length > maxNameLength) {
-    return res.status(400).json({
-      message: `Invalid conversation name. Name must be between ${minNameLength} and ${maxNameLength} characters long`,
-    });
-  }
-
-  if (users.length < minUsers || users.length > maxUsers) {
-    return res.status(400).json({
-      message: `Invalid number of users. Conversations must contain between ${minUsers} and ${maxUsers} users`,
-    });
-  }
   const foundUsers = await User.find({ _id: { $in: users } });
 
   if (foundUsers.length !== users.length) {

@@ -31,6 +31,7 @@ beforeAll(async () => {
     .send({
       username: 'username',
       password: 'P@ssw0rd',
+      confirmPassword: 'P@ssw0rd',
     })
     .expect(201);
 
@@ -39,6 +40,7 @@ beforeAll(async () => {
     .send({
       username: 'username2',
       password: 'P@ssw0rd',
+      confirmPassword: 'P@ssw0rd',
     })
     .expect(201);
 
@@ -80,6 +82,7 @@ describe('POST /conversation', () => {
         .send({
           username: currentUsername,
           password: 'P@ssw0rd',
+          confirmPassword: 'P@ssw0rd',
         })
         .expect(201);
       let currentUser = await User.findOne({ username: currentUsername });
@@ -172,7 +175,7 @@ describe('POST /conversation', () => {
       .expect(400, done);
   });
 
-  it('responds with a 201 and creates new conversation, sanitizing number input to a string', (done) => {
+  it('responds with a 400 due to having a name that is not a string', (done) => {
     agent
       .post('/conversation')
       .send({
@@ -181,7 +184,7 @@ describe('POST /conversation', () => {
       })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
-      .expect(201, done);
+      .expect(400, done);
   });
 
   it('responds with a 403 due to not being authenticated', async () => {
