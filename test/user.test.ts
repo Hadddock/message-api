@@ -542,6 +542,18 @@ describe('POST /signup', () => {
       .expect('Content-Type', /json/)
       .expect(400, done);
   });
+  it(`responds with a 400 due to password being < ${minPasswordLength} characters long`, (done) => {
+    request(app)
+      .post('/signup')
+      .send({
+        username: 'usernametwo',
+        password: 'P@0' + 'd'.repeat(minPasswordLength - 4),
+        confirmPassword: 'P@0' + 'd'.repeat(minPasswordLength - 4),
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
 
   it(`responds with a 400 due to username being < ${minUsernameLength} characters long`, (done) => {
     request(app)
