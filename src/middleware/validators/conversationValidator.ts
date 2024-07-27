@@ -17,6 +17,10 @@ export const validatePostConversation = [
     .isLength({ max: maxNameLength, min: minNameLength }),
   check('users')
     .isArray()
+    .custom((value: Array<string>) => {
+      const set = new Set(value);
+      return set.size === value.length;
+    })
     .custom((value) => value.length >= minUsers && value.length <= maxUsers)
     .custom((value: Array<string>) =>
       value.every((id: string) => mongoose.Types.ObjectId.isValid(id))

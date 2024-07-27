@@ -127,6 +127,18 @@ describe('POST /conversation', () => {
       .expect(400, done);
   });
 
+  it('responds with a 400 due to having duplicate userIds', (done) => {
+    agent
+      .post('/conversation')
+      .send({
+        name: 'new conversation',
+        users: [userOneId, userTwoId, userOneId],
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
   it('responds with a 400 due to having no userIds', (done) => {
     agent
       .post('/conversation')

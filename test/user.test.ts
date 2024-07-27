@@ -397,7 +397,7 @@ describe('PUT /users/:user/pins', () => {
 
 describe('GET /users/:user', () => {
   it('responds with a 200 and user', async () => {
-    await agent.get(`/users/${userTwoId}`).expect(200);
+    const userProfile = await agent.get(`/users/${userTwoId}`).expect(200);
   });
 
   it('responds with a 404 due to userId not corresponding to any user', async () => {
