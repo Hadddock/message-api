@@ -3,9 +3,7 @@ import { MongoMemoryServer } from 'mongodb-memory-server';
 import app from '../test/__mocks__/mockApp';
 import dbConnection from '../test/__mocks__/mockDatabase';
 import User from '../src/models/User';
-import { signUp } from '../src/controllers/userController';
 import mongoose from 'mongoose';
-import { ObjectId } from 'mongoose';
 
 const agent = request.agent(app);
 let userOneId: mongoose.Types.ObjectId;

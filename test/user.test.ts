@@ -4,7 +4,7 @@ import app from '../test/__mocks__/mockApp';
 import dbConnection from '../test/__mocks__/mockDatabase';
 import User from '../src/models/User';
 import mongoose from 'mongoose';
-import { signUp } from '../src/controllers/userController';
+
 import {
   maxBioLength,
   maxPasswordLength,
@@ -542,6 +542,7 @@ describe('POST /signup', () => {
       .expect('Content-Type', /json/)
       .expect(400, done);
   });
+
   it(`responds with a 400 due to password being < ${minPasswordLength} characters long`, (done) => {
     request(app)
       .post('/signup')

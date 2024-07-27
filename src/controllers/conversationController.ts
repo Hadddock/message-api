@@ -2,11 +2,6 @@ import User from '../models/User';
 import Conversation from '../models/Conversation';
 import { RequestHandler } from 'express';
 
-interface ConversationRequestBody {
-  name: string;
-  users: string[];
-}
-
 export const postConversation: RequestHandler = async (req, res, next) => {
   let { name, users } = req.body;
 
