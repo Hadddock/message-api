@@ -4,10 +4,17 @@ export interface Conversation {
   id: string;
   name: string;
   users: Array<User>;
-  latestMessage: Message;
   creationTime: Date;
+  getPreview(): Promise<Preview>;
 }
 
+export interface Preview {
+  id: string;
+  name: string;
+  users: Array<User>;
+  creationTime: Date;
+  latestMessage: Message;
+}
 const maxUsers = 12;
 const minUsers = 2;
 const minNameLength = 2;

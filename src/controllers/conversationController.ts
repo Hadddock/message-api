@@ -20,3 +20,23 @@ export const postConversation: RequestHandler = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getPreviews: RequestHandler = async (req, res, next) => {
+  const user = await User.findById(req.user?.id);
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+  const conversations = await Conversation.find({
+    users: user._id,
+  });
+
+  console.log(await conversations[0].getPreview());
+  const previews = await Promise.all(
+    conversations.map((c) => {
+      c.getPreview();
+    })
+  );
+  console.log('Wow');
+  console.log(previews);
+  res.status(200).json(previews);
+};

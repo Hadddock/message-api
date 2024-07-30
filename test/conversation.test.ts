@@ -70,6 +70,33 @@ describe('POST /conversation', () => {
       .expect(201, done);
   });
 
+  describe('GET /conversations/previews', () => {
+    it.only('responds with a 200 and returns conversation previews', async () => {
+      const conversation = await agent
+        .post('/conversation')
+        .send({
+          name: 'new conversation',
+          users: [userOneId, userTwoId],
+        })
+        .set('Accept', 'application/json')
+        .expect('Content-Type', /json/)
+        .expect(201);
+      conversation;
+
+      const conversationPreviews = await agent
+        .get('/conversations/previews')
+        .set('Accept', 'application/json')
+        .expect('Content-Type', /json/)
+        .expect(200);
+
+      expect(conversationPreviews).toBeDefined();
+      expect(conversationPreviews.body).toBeDefined();
+      expect(conversationPreviews.body).toBeInstanceOf(Array);
+      expect(conversationPreviews.body.length).toBe(1);
+      console.log(conversationPreviews.body[0]);
+    });
+  });
+
   it(`responds with a 400 due to having > ${maxUsers} users`, async () => {
     let users = [];
 

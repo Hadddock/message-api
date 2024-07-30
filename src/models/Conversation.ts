@@ -26,8 +26,21 @@ const conversationSchema = new Schema<IConversation>({
     },
   },
   creationTime: { type: Date, required: true, default: Date.now() },
-  latestMessage: { type: Schema.Types.ObjectId, ref: 'Message' },
 });
+
+conversationSchema.methods.getPreview = async function () {
+  let latestMessage = await model('Message')
+    .findOne({ conversation: this._id })
+    .sort({ creationTime: -1 });
+
+  return {
+    name: this.name,
+    users: this.users,
+    creationTime: this.creationTime,
+    userProfile: this.userProfile,
+    latestMessage: latestMessage,
+  };
+};
 
 const Conversation = model<IConversation>('Conversation', conversationSchema);
 export default Conversation;
