@@ -30,13 +30,8 @@ export const getPreviews: RequestHandler = async (req, res, next) => {
     users: user._id,
   });
 
-  console.log(await conversations[0].getPreview());
-  const previews = await Promise.all(
-    conversations.map((c) => {
-      c.getPreview();
-    })
-  );
-  console.log('Wow');
+  const previews = await Promise.all(conversations.map((c) => c.getPreview()));
+
   console.log(previews);
   res.status(200).json(previews);
 };

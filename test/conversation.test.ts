@@ -72,6 +72,7 @@ describe('POST /conversation', () => {
 
   describe('GET /conversations/previews', () => {
     it.only('responds with a 200 and returns conversation previews', async () => {
+      //arrange conversations
       const conversation = await agent
         .post('/conversation')
         .send({
@@ -81,19 +82,29 @@ describe('POST /conversation', () => {
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
         .expect(201);
-      conversation;
+      await agent
+        .post('/conversation/' + conversation.body._id + '/message')
+        .send({ content: 'hello', conversation: conversation.body._id })
+        .expect(201);
 
+      //act
       const conversationPreviews = await agent
         .get('/conversations/previews')
         .set('Accept', 'application/json')
         .expect('Content-Type', /json/)
         .expect(200);
-
+      //assert
       expect(conversationPreviews).toBeDefined();
+
       expect(conversationPreviews.body).toBeDefined();
       expect(conversationPreviews.body).toBeInstanceOf(Array);
       expect(conversationPreviews.body.length).toBe(1);
-      console.log(conversationPreviews.body[0]);
+
+      expect(conversationPreviews.body[0]).toBeDefined();
+      expect(conversationPreviews.body[0].name).toBe('new conversation');
+      // expect(conversationPreviews.body[0].users[0]).toEqual(userOneId);
+      expect(conversationPreviews.body[0].latestMessage).toBeDefined();
+      expect(conversationPreviews.body[0].latestMessage.content).toBe('hello');
     });
   });
 

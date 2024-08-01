@@ -37,7 +37,6 @@ conversationSchema.methods.getPreview = async function () {
     name: this.name,
     users: this.users,
     creationTime: this.creationTime,
-    userProfile: this.userProfile,
     latestMessage: latestMessage,
   };
 };
