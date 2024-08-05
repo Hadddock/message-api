@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   getUser,
+  getPins,
   putPins,
   home,
   login,
@@ -12,6 +13,7 @@ import {
 import asyncHandler from 'express-async-handler';
 import {
   validatePutPins,
+  validateGetPins,
   validateDeleteUser,
   validateGetUser,
   validateSearchUser,
@@ -26,6 +28,12 @@ router.get(
   checkAuthentication,
   validateGetUser,
   asyncHandler(getUser)
+);
+router.get(
+  '/users/:user/pins',
+  checkAuthentication,
+  validateGetPins,
+  asyncHandler(getPins)
 );
 router.put(
   '/users/:user/pins',

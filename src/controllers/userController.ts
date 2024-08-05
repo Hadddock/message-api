@@ -14,6 +14,18 @@ import {
 } from '../interfaces/User';
 
 //toggle a conversation as pinned
+
+export const getPins: RequestHandler = async (req, res, next) => {
+  const userId = req.params.user;
+  const user = await User.findById(userId).populate('pinnedConversations');
+
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  return res.status(200).json(user.pinnedConversations);
+};
+
 export const putPins: RequestHandler = async (req, res, next) => {
   let { conversationId, pin } = req.body;
   if (!conversationId) {
