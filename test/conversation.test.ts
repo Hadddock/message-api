@@ -53,8 +53,77 @@ beforeAll(async () => {
   const userTwo = await User.findOne({ username: 'username2' });
   if (userOne === null || userTwo === null) throw new Error('Users not found');
 
-  userOneId = userOne._id;
-  userTwoId = userTwo._id;
+  userOneId = userOne.id;
+  userTwoId = userTwo.id;
+});
+
+describe('GET /conversations/previews', () => {
+  describe('when there are no conversations', () => {
+    it('responds with a 200 and returns an empty array', async () => {
+      const conversationPreviews = await agent
+        .get('/conversations/previews')
+        .set('Accept', 'application/json')
+        .expect('Content-Type', /json/)
+        .expect(200);
+      expect(conversationPreviews).toBeDefined();
+
+      expect(conversationPreviews.body).toBeDefined();
+      expect(conversationPreviews.body).toBeInstanceOf(Array);
+      expect(conversationPreviews.body.length).toBe(0);
+    });
+  });
+
+  describe('when there are conversations', () => {
+    let conversation: any;
+    beforeAll(async () => {
+      conversation = await agent
+        .post('/conversation')
+        .send({
+          name: 'new conversation',
+          users: [userOneId, userTwoId],
+        })
+        .set('Accept', 'application/json')
+        .expect('Content-Type', /json/)
+        .expect(201);
+
+      await agent
+        .post('/conversation/' + conversation.body._id + '/message')
+        .send({ content: 'hello', conversation: conversation.body._id })
+        .expect(201);
+    });
+
+    it('responds with a 403 due to not being authenticated', async () => {
+      return request(app)
+        .get('/conversations/previews')
+        .set('Accept', 'application/json')
+        .expect('Content-Type', /json/)
+        .expect(403);
+    });
+
+    it('responds with a 200 and returns conversation previews', async () => {
+      const conversationPreviews = await agent
+        .get('/conversations/previews')
+        .set('Accept', 'application/json')
+        .expect('Content-Type', /json/)
+        .expect(200);
+      expect(conversationPreviews).toBeDefined();
+
+      expect(conversationPreviews.body).toBeDefined();
+      expect(conversationPreviews.body).toBeInstanceOf(Array);
+
+      expect(conversationPreviews.body[0]).toBeDefined();
+      expect(conversationPreviews.body[0]).toHaveProperty('name');
+      expect(conversationPreviews.body[0]).toHaveProperty('latestMessage');
+      expect(conversationPreviews.body[0]).toHaveProperty('creationTime');
+      expect(conversationPreviews.body[0]).toHaveProperty('users');
+      expect(conversationPreviews.body[0]).toHaveProperty('id');
+      expect(conversationPreviews.body[0].name).toBe('new conversation');
+      expect(conversationPreviews.body[0].users[0]).toEqual(userOneId);
+      expect(conversationPreviews.body[0].latestMessage).toBeDefined();
+
+      expect(conversationPreviews.body[0].latestMessage.content).toBe('hello');
+    });
+  });
 });
 
 describe('POST /conversation', () => {
@@ -68,44 +137,6 @@ describe('POST /conversation', () => {
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
       .expect(201, done);
-  });
-
-  describe('GET /conversations/previews', () => {
-    it.only('responds with a 200 and returns conversation previews', async () => {
-      //arrange conversations
-      const conversation = await agent
-        .post('/conversation')
-        .send({
-          name: 'new conversation',
-          users: [userOneId, userTwoId],
-        })
-        .set('Accept', 'application/json')
-        .expect('Content-Type', /json/)
-        .expect(201);
-      await agent
-        .post('/conversation/' + conversation.body._id + '/message')
-        .send({ content: 'hello', conversation: conversation.body._id })
-        .expect(201);
-
-      //act
-      const conversationPreviews = await agent
-        .get('/conversations/previews')
-        .set('Accept', 'application/json')
-        .expect('Content-Type', /json/)
-        .expect(200);
-      //assert
-      expect(conversationPreviews).toBeDefined();
-
-      expect(conversationPreviews.body).toBeDefined();
-      expect(conversationPreviews.body).toBeInstanceOf(Array);
-      expect(conversationPreviews.body.length).toBe(1);
-
-      expect(conversationPreviews.body[0]).toBeDefined();
-      expect(conversationPreviews.body[0].name).toBe('new conversation');
-      // expect(conversationPreviews.body[0].users[0]).toEqual(userOneId);
-      expect(conversationPreviews.body[0].latestMessage).toBeDefined();
-      expect(conversationPreviews.body[0].latestMessage.content).toBe('hello');
-    });
   });
 
   it(`responds with a 400 due to having > ${maxUsers} users`, async () => {
