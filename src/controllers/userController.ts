@@ -61,9 +61,6 @@ export const putPins: RequestHandler = async (req, res, next) => {
   }
   user.save();
   const foundUser = await User.findById(req.user?.id);
-  if (foundUser) {
-    console.log(foundUser.pinnedConversations);
-  }
 
   return res.status(200).json({
     message: 'Conversation pinned successfully',

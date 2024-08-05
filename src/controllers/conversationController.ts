@@ -32,6 +32,5 @@ export const getPreviews: RequestHandler = async (req, res, next) => {
 
   const previews = await Promise.all(conversations.map((c) => c.getPreview()));
 
-  console.log(previews);
   res.status(200).json(previews);
 };

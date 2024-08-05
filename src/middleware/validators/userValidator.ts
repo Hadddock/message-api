@@ -65,7 +65,6 @@ export const validateGetUser = [
 
 export const validateDeleteUser = [
   check('user').custom((value, { req }) => {
-    console.log(req.user?.id === value);
     return req.user?.id === value;
   }),
   check('user').isString().isLength({ min: 24, max: 24 }),
