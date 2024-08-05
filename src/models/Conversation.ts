@@ -34,6 +34,7 @@ conversationSchema.methods.getPreview = async function () {
     .sort({ creationTime: -1 });
 
   return {
+    id: this.id,
     name: this.name,
     users: this.users,
     creationTime: this.creationTime,
