@@ -11,29 +11,25 @@ export const postMessage: RequestHandler = async (req, res, next) => {
   const conversation = req.params.conversation;
   const user = req.user?.id;
 
-  try {
-    const [foundConversation, foundUser] = await Promise.all([
-      Conversation.findOne({ _id: conversation }),
-      User.findOne({ _id: user }),
-    ]);
+  const [foundConversation, foundUser] = await Promise.all([
+    Conversation.findOne({ _id: conversation }),
+    User.findOne({ _id: user }),
+  ]);
 
-    if (!foundConversation) {
-      return res.status(400).json({ message: 'Invalid conversation' });
-    }
-
-    if (!foundUser) {
-      return res.status(400).json({ message: 'Invalid user' });
-    }
-
-    const message = new Message({
-      user,
-      content,
-      imageUrl,
-      conversation,
-    });
-    await message.save();
-    res.status(201).json(message);
-  } catch (error) {
-    next(error);
+  if (!foundConversation) {
+    return res.status(400).json({ message: 'Invalid conversation' });
   }
+
+  if (!foundUser) {
+    return res.status(400).json({ message: 'Invalid user' });
+  }
+
+  const message = new Message({
+    user,
+    content,
+    imageUrl,
+    conversation,
+  });
+  await message.save();
+  res.status(201).json(message);
 };
