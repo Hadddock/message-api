@@ -1,6 +1,7 @@
 import express from 'express';
 import {
   putBlock,
+  putUnblock,
   getUser,
   getPins,
   putPins,
@@ -19,6 +20,7 @@ import {
   validateGetUser,
   validateSearchUser,
   validateBlock,
+  validateUnblock,
   validateSignUp,
 } from '../middleware/validators/userValidator';
 import { checkAuthentication } from '../middleware/authentication';
@@ -30,6 +32,13 @@ router.put(
   checkAuthentication,
   validateBlock,
   asyncHandler(putBlock)
+);
+
+router.put(
+  '/users/:user/unblock',
+  checkAuthentication,
+  validateUnblock,
+  asyncHandler(putUnblock)
 );
 
 router.get(

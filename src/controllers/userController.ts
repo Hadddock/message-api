@@ -17,27 +17,52 @@ export const putBlock: RequestHandler = async (req, res, next) => {
   const { blockedUserId } = req.body;
   const blockedUser = await User.findById(blockedUserId);
   if (!blockedUser) {
-    console.log('Blocked user not found');
     return res.status(404).json({ message: 'Blocked user not found' });
   }
-  console.log('Blocked user found');
+
   const currentUser = await User.findById(req.user?.id);
 
   if (!currentUser) {
-    console.log('Current user not found');
     return res.status(404).json({ message: 'User not found' });
   }
-  console.log('it crashdes here');
+
   if (currentUser.blockedUsers.includes(blockedUserId)) {
     return res.status(400).json({ message: 'User already blocked' });
   }
 
   currentUser.blockedUsers.push(blockedUserId);
   currentUser.save();
-  console.log('here here');
-  console.log(currentUser.blockedUsers);
+
   return res.status(200).json({
     message: 'User blocked successfully',
+    blockedUsers: currentUser.blockedUsers,
+  });
+};
+
+export const putUnblock: RequestHandler = async (req, res, next) => {
+  const { unblockedUserId } = req.body;
+  const unblockedUser = await User.findById(unblockedUserId);
+  if (!unblockedUser) {
+    return res.status(404).json({ message: 'Unblocked user not found' });
+  }
+
+  const currentUser = await User.findById(req.user?.id);
+
+  if (!currentUser) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  if (!currentUser.blockedUsers.includes(unblockedUserId)) {
+    return res.status(400).json({ message: 'User not blocked' });
+  }
+
+  currentUser.blockedUsers = currentUser.blockedUsers.filter(
+    (id) => id != unblockedUserId
+  );
+
+  currentUser.save();
+  return res.status(200).json({
+    message: 'User unblocked successfully',
     blockedUsers: currentUser.blockedUsers,
   });
 };

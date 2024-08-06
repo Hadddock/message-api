@@ -66,7 +66,13 @@ beforeAll(async () => {
     .expect(200);
 });
 
-describe.only('PUT /users/:user/block', () => {
+describe('PUT /users/:user/block', () => {
+  afterEach(async () => {
+    await agent
+      .put(`/users/${userOneId}/unblock`)
+      .send({ blockedUserId: userTwoId });
+  });
+
   it('responds with a 200 and blocks a user', async () => {
     const response = await agent
       .put(`/users/${userOneId}/block`)
@@ -114,6 +120,62 @@ describe.only('PUT /users/:user/block', () => {
     await agent
       .put(`/users/${userOneId}/block`)
       .send({ blockedUserId: { userTwoId }, block: true })
+      .expect(400);
+  });
+});
+
+describe('PUT /users/:user/unblock', () => {
+  beforeEach(async () => {
+    await agent
+      .put(`/users/${userOneId}/block`)
+      .send({ blockedUserId: userTwoId });
+  });
+
+  it('responds with a 200 and unblocks a user', async () => {
+    const response = await agent
+      .put(`/users/${userOneId}/unblock`)
+      .send({ unblockedUserId: userTwoId })
+      .expect(200);
+
+    expect(response.body.blockedUsers).toHaveLength(0);
+  });
+
+  it('responds with a 400 due to unblockedUserId not being included', async () => {
+    await agent.put(`/users/${userOneId}/unblock`).expect(400);
+  });
+
+  it('responds with a 400 due to current user id not matching path parameter', async () => {
+    await agent
+      .put(`/users/${userThreeId}/unblock`)
+      .send({ unblockedUserId: userTwoId })
+      .expect(400);
+  });
+
+  it('responds with a 400 due to current user trying to unblock themselves', async () => {
+    await agent
+      .put(`/users/${userOneId}/unblock`)
+      .send({ unblockedUserId: userOneId })
+      .expect(400);
+  });
+
+  it('responds with a 404 due to unblockedUser not being found', async () => {
+    await agent
+      .put(`/users/${userOneId}/unblock`)
+      .send({ unblockedUserId: new mongoose.Types.ObjectId() })
+      .expect(404);
+  });
+
+  it('responds with a 403 due to user not being logged in', async () => {
+    await request(app)
+      .put(`/users/${userOneId}/unblock`)
+      .send({ unblockedUserId: userTwoId })
+      .expect(403);
+  });
+
+  it('responds with a 400 due to unblockedUserId not being a string', async () => {
+    await agent
+      .put(`/users/${userOneId}/unblock`)
+      .send({ unblockedUserId: { userTwoId } })
       .expect(400);
   });
 });
