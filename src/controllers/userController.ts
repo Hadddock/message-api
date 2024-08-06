@@ -13,7 +13,34 @@ import {
   maxUsernameLength,
 } from '../interfaces/User';
 
-//toggle a conversation as pinned
+export const putBlock: RequestHandler = async (req, res, next) => {
+  const { blockedUserId } = req.body;
+  const blockedUser = await User.findById(blockedUserId);
+  if (!blockedUser) {
+    console.log('Blocked user not found');
+    return res.status(404).json({ message: 'Blocked user not found' });
+  }
+  console.log('Blocked user found');
+  const currentUser = await User.findById(req.user?.id);
+
+  if (!currentUser) {
+    console.log('Current user not found');
+    return res.status(404).json({ message: 'User not found' });
+  }
+  console.log('it crashdes here');
+  if (currentUser.blockedUsers.includes(blockedUserId)) {
+    return res.status(400).json({ message: 'User already blocked' });
+  }
+
+  currentUser.blockedUsers.push(blockedUserId);
+  currentUser.save();
+  console.log('here here');
+  console.log(currentUser.blockedUsers);
+  return res.status(200).json({
+    message: 'User blocked successfully',
+    blockedUsers: currentUser.blockedUsers,
+  });
+};
 
 export const getPins: RequestHandler = async (req, res, next) => {
   const userId = req.params.user;

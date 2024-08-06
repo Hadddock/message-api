@@ -66,6 +66,58 @@ beforeAll(async () => {
     .expect(200);
 });
 
+describe.only('PUT /users/:user/block', () => {
+  it('responds with a 200 and blocks a user', async () => {
+    const response = await agent
+      .put(`/users/${userOneId}/block`)
+      .send({ blockedUserId: userTwoId })
+      .expect(200);
+
+    expect(response.body.blockedUsers[0].toString()).toEqual(
+      userTwoId.toString()
+    );
+  });
+
+  it('responds with a 400 due to blockedUserId not being included', async () => {
+    await agent.put(`/users/${userOneId}/block`).expect(400);
+  });
+
+  it('responds with a 400 due to current user id not matching path parameter', async () => {
+    await agent
+      .put(`/users/${userThreeId}/block`)
+      .send({ blockedUserId: userTwoId })
+      .expect(400);
+  });
+
+  it('responds with a 400 due to current user trying to block block themselves', async () => {
+    await agent
+      .put(`/users/${userOneId}/block`)
+      .send({ blockedUserId: userOneId })
+      .expect(400);
+  });
+
+  it('responds with a 404 due to blockedUser not being found', async () => {
+    await agent
+      .put(`/users/${userOneId}/block`)
+      .send({ blockedUserId: new mongoose.Types.ObjectId(), block: true })
+      .expect(404);
+  });
+
+  it('responds with a 403 due to user not being logged in', async () => {
+    await request(app)
+      .put(`/users/${userOneId}/block`)
+      .send({ blockedUserId: userTwoId })
+      .expect(403);
+  });
+
+  it('responds with a 400 due to userId not being a string', async () => {
+    await agent
+      .put(`/users/${userOneId}/block`)
+      .send({ blockedUserId: { userTwoId }, block: true })
+      .expect(400);
+  });
+});
+
 describe('GET /users', () => {
   it('searches for a user successfully with an exact unique username', async () => {
     const users = await agent

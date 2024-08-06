@@ -1,5 +1,6 @@
 import express from 'express';
 import {
+  putBlock,
   getUser,
   getPins,
   putPins,
@@ -17,11 +18,19 @@ import {
   validateDeleteUser,
   validateGetUser,
   validateSearchUser,
+  validateBlock,
   validateSignUp,
 } from '../middleware/validators/userValidator';
 import { checkAuthentication } from '../middleware/authentication';
 
 const router = express.Router();
+
+router.put(
+  '/users/:user/block',
+  checkAuthentication,
+  validateBlock,
+  asyncHandler(putBlock)
+);
 
 router.get(
   '/users/:user',

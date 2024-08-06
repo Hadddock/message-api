@@ -8,6 +8,24 @@ import {
   minPasswordLength,
   maxPasswordLength,
 } from '../../interfaces/User';
+export const validateBlock = [
+  check('blockedUserId').isString(),
+  check('blockedUserId').custom((value, { req }) => {
+    return req.user?.id !== value;
+  }),
+  check('user').custom((value, { req }) => {
+    return req.user?.id === value;
+  }),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      console.log('there were errors in validation');
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  },
+];
+
 
 export const validateSearchUser = [
   check('username')

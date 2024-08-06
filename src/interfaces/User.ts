@@ -9,6 +9,7 @@ export interface User {
   bio: string;
   joinTime: Date;
   pinnedConversations: Array<Conversation>;
+  blockedUsers: Array<User>;
   getPublicProfile(): User;
 }
 
