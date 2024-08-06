@@ -66,6 +66,39 @@ beforeAll(async () => {
     .expect(200);
 });
 
+describe('GET /users/:user/blocked-users', () => {
+  beforeAll(async () => {
+    await agent
+      .put(`/users/${userOneId}/block`)
+      .send({ blockedUserId: userTwoId });
+  });
+
+  afterAll(async () => {
+    await agent
+      .put(`/users/${userOneId}/unblock`)
+      .send({ unblockedUserId: userTwoId });
+  });
+
+  it('responds with a 200 and blocked users', async () => {
+    const response = await agent
+      .get(`/users/${userOneId}/blocked-users`)
+      .expect(200);
+    expect(response.body).toBeInstanceOf(Array);
+    expect(response.body).toHaveLength(1);
+    expect(response.body[0].username).toBe('username2');
+  });
+
+  it('responds with a 400 due to authenticated user not matching user param', async () => {
+    await agent
+      .get(`/users/${new mongoose.Types.ObjectId()}/blocked-users`)
+      .expect(400);
+  });
+
+  it('responds with a 403 due to user not being logged in', (done) => {
+    request(app).get(`/users/${userOneId}/blocked-users`).expect(403, done);
+  });
+});
+
 describe('PUT /users/:user/block', () => {
   afterEach(async () => {
     await agent

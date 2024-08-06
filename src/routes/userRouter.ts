@@ -11,6 +11,7 @@ import {
   signUp,
   searchUser,
   deleteUser,
+  getBlockedUsers,
 } from '../controllers/userController';
 import asyncHandler from 'express-async-handler';
 import {
@@ -22,6 +23,7 @@ import {
   validateBlock,
   validateUnblock,
   validateSignUp,
+  validateGetBlockedUsers,
 } from '../middleware/validators/userValidator';
 import { checkAuthentication } from '../middleware/authentication';
 
@@ -34,6 +36,12 @@ router.put(
   asyncHandler(putBlock)
 );
 
+router.get(
+  '/users/:user/blocked-users',
+  checkAuthentication,
+  validateGetBlockedUsers,
+  asyncHandler(getBlockedUsers)
+);
 router.put(
   '/users/:user/unblock',
   checkAuthentication,

@@ -13,6 +13,18 @@ import {
   maxUsernameLength,
 } from '../interfaces/User';
 
+export const getBlockedUsers: RequestHandler = async (req, res, next) => {
+  const user = await User.findById(req.user?.id).populate('blockedUsers');
+
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  const blockedUsers = user?.blockedUsers.map((u) => u.getPublicProfile());
+
+  res.status(200).json(blockedUsers);
+};
+
 export const putBlock: RequestHandler = async (req, res, next) => {
   const { blockedUserId } = req.body;
   const blockedUser = await User.findById(blockedUserId);

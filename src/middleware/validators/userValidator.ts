@@ -9,6 +9,21 @@ import {
   maxPasswordLength,
 } from '../../interfaces/User';
 
+export const validateGetBlockedUsers = [
+  check('user').isMongoId(),
+  check('user').custom((value, { req }) => {
+    return req.user?.id === value;
+  }),
+
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  },
+];
+
 export const validateBlock = [
   check('blockedUserId').isString(),
   check('blockedUserId').isMongoId(),
