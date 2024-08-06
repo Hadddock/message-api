@@ -6,6 +6,8 @@ export interface Message {
   imageUrl?: string;
   postTime: Date;
   editTime?: Date;
+  deletedAt?: Date;
+  deleted: boolean;
   user: User;
   conversation: Conversation;
 }

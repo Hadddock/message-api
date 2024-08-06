@@ -61,6 +61,69 @@ beforeAll(async () => {
   conversation = createdConversation.body._id;
 });
 
+describe('DELETE /conversation/:conversation/message/:message', () => {
+  let messageId: string;
+  beforeEach(async () => {
+    const response = await agent
+      .post(`/conversation/${conversation}/message`)
+      .send({ content: 'hello' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(201);
+    messageId = response.body._id;
+  });
+
+  it('responds with a 403 due to not being logged in', (done) => {
+    request(app)
+      .delete(`/conversation/${conversation}/message/${messageId}`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(403, done);
+  });
+
+  it('responds with a 200 and deletes the message', (done) => {
+    agent
+      .delete(`/conversation/${conversation}/message/${messageId}`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(205, done);
+  });
+  it('responds with a 400 due to not being the creator of the message', async () => {
+    await agent
+      .post('/login')
+      .send({ username: 'username2', password: 'P@ssw0rd' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+    await agent
+      .delete(`/conversation/${conversation}/message/${messageId}`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400);
+    await agent
+      .post('/login')
+      .send({ username: 'username', password: 'P@ssw0rd' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+  });
+
+  it('responds with a 400 due to message already being deleted', async () => {
+    //delete the message
+    await agent
+      .delete(`/conversation/${conversation}/message/${messageId}`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(205);
+    //try deleting it again
+    await agent
+      .delete(`/conversation/${conversation}/message/${messageId}`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
+});
+
 describe('POST /conversation', () => {
   it('responds with a 201 and creates new message with only content', (done) => {
     agent

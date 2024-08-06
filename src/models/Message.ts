@@ -12,6 +12,10 @@ import {
 } from '../interfaces/Message';
 
 const messageSchema = new Schema<IMessage>({
+  deleted: {
+    type: Boolean,
+    default: false,
+  },
   content: {
     type: String,
     min: minContentLength,
@@ -36,6 +40,7 @@ const messageSchema = new Schema<IMessage>({
   user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
   postTime: { type: Date, required: true, default: Date.now() },
   editTime: { type: Date },
+  deletedAt: { type: Date },
 });
 
 const Message = model<IMessage>('Message', messageSchema);
