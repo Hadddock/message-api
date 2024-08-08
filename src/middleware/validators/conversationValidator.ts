@@ -17,6 +17,9 @@ export const validatePostConversation = [
     .isLength({ max: maxNameLength, min: minNameLength }),
   check('users')
     .isArray()
+    .custom((value: Array<string>, { req }) => {
+      return value.includes(req.user.id);
+    })
     .custom((value: Array<string>) => {
       const set = new Set(value);
       return set.size === value.length;

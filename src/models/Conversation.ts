@@ -15,6 +15,16 @@ const conversationSchema = new Schema<IConversation>({
     min: minNameLength,
     max: maxNameLength,
   },
+
+  admins: {
+    type: [{ type: Schema.Types.ObjectId, ref: 'User', required: true }],
+    validate: {
+      validator: function (admins: Array<any>) {
+        return admins.length > 0;
+      },
+      message: (props) => `${props.value} should have at least one admin`,
+    },
+  },
   users: {
     type: [{ type: Schema.Types.ObjectId, ref: 'User', required: true }],
     validate: {

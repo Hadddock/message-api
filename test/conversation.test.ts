@@ -127,8 +127,8 @@ describe('GET /conversations/previews', () => {
 });
 
 describe('POST /conversation', () => {
-  it('responds with a 201 and creates new conversation', (done) => {
-    agent
+  it('responds with a 201 and creates new conversation', async () => {
+    const conversation = await agent
       .post('/conversation')
       .send({
         name: 'new conversation',
@@ -136,7 +136,19 @@ describe('POST /conversation', () => {
       })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
-      .expect(201, done);
+      .expect(201);
+
+    expect(conversation).toBeDefined();
+    expect(conversation.body).toBeDefined();
+    expect(conversation.body).toHaveProperty('name');
+    expect(conversation.body).toHaveProperty('admins');
+    expect(conversation.body).toHaveProperty('users');
+    expect(conversation.body).toHaveProperty('creationTime');
+    expect(conversation.body.name).toBe('new conversation');
+    expect(conversation.body.users).toContain(userOneId);
+    expect(conversation.body.users).toContain(userTwoId);
+    expect(conversation.body.admins).toBeInstanceOf(Array);
+    expect(conversation.body.admins).toContain(userOneId);
   });
 
   it(`responds with a 400 due to having > ${maxUsers} users`, async () => {

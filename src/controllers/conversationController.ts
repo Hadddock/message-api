@@ -11,7 +11,11 @@ export const postConversation: RequestHandler = async (req, res, next) => {
     return res.status(400).json({ message: 'Invalid user id(s)' });
   }
 
-  const conversation = new Conversation({ name, users });
+  const conversation = new Conversation({
+    name,
+    users,
+    admins: [req.user?.id],
+  });
 
   try {
     await conversation.save();
