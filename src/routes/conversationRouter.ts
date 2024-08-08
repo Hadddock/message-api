@@ -2,12 +2,23 @@ import express from 'express';
 import {
   postConversation,
   getPreviews,
+  postAddUsers,
 } from '../controllers/conversationController';
 import asyncHandler from 'express-async-handler';
 import { checkAuthentication } from '../middleware/authentication';
-import { validatePostConversation } from '../middleware/validators/conversationValidator';
+import {
+  validatePostConversation,
+  validateAddUsers,
+} from '../middleware/validators/conversationValidator';
 
 const router = express.Router();
+
+router.post(
+  '/conversation/:conversation/users',
+  checkAuthentication,
+  validateAddUsers,
+  asyncHandler(postAddUsers)
+);
 
 router.post(
   '/conversation',

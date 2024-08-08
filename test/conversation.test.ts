@@ -8,6 +8,9 @@ import mongoose from 'mongoose';
 const agent = request.agent(app);
 let userOneId: mongoose.Types.ObjectId;
 let userTwoId: mongoose.Types.ObjectId;
+let userThreeId: mongoose.Types.ObjectId;
+
+let bulkUserArray: string[] = [];
 
 import {
   maxUsers,
@@ -43,6 +46,30 @@ beforeAll(async () => {
     .expect(201);
 
   await agent
+    .post('/signup')
+    .send({
+      username: 'username3',
+      password: 'P@ssw0rd',
+      confirmPassword: 'P@ssw0rd',
+    })
+    .expect(201);
+  for (let i = 0; i < maxUsers; i++) {
+    await agent
+      .post('/signup')
+      .send({
+        username: 'user' + i,
+        password: 'P@ssw0rd',
+        confirmPassword: 'P@ssw0rd',
+      })
+      .expect(201);
+
+    let currentUser = await User.findOne({ username: 'user' + i });
+    if (currentUser) {
+      bulkUserArray.push(currentUser.id);
+    }
+  }
+
+  await agent
     .post('/login')
     .send({ username: 'username', password: 'P@ssw0rd' })
     .set('Accept', 'application/json')
@@ -51,10 +78,14 @@ beforeAll(async () => {
 
   const userOne = await User.findOne({ username: 'username' });
   const userTwo = await User.findOne({ username: 'username2' });
-  if (userOne === null || userTwo === null) throw new Error('Users not found');
+  const userThree = await User.findOne({ username: 'username3' });
+
+  if (userOne === null || userTwo === null || userThree === null)
+    throw new Error('Users not found');
 
   userOneId = userOne.id;
   userTwoId = userTwo.id;
+  userThreeId = userThree.id;
 });
 
 describe('GET /conversations/previews', () => {
@@ -126,6 +157,91 @@ describe('GET /conversations/previews', () => {
   });
 });
 
+describe('POST /conversation/:conversation/users', () => {
+  let conversation: any;
+  beforeAll(async () => {
+    conversation = await agent
+      .post('/conversation')
+      .send({
+        name: 'new conversation',
+        users: [userOneId, userTwoId],
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(201);
+  });
+
+  it('responds with a 403 due to not being authenticated', async () => {
+    return request(app)
+      .post(`/conversation/${conversation.body._id}/users`)
+      .send({ users: [userThreeId] })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(403);
+  });
+
+  it('responds with a 400 due to trying to add more users than possible', async () => {
+    const bulkConversation = await agent
+      //create conversation with 2 users
+      .post('/conversation')
+      .send({
+        name: 'new conversation',
+        users: [userOneId, userTwoId],
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(201);
+    //add maxUsers
+    await agent
+      .post(`/conversation/${bulkConversation.body._id}/users`)
+      .send(bulkUserArray)
+      .expect(400);
+  });
+
+  it('responds with a 200 and adds users to the conversation', async () => {
+    const updatedConversation = await agent
+      .post(`/conversation/${conversation.body._id}/users`)
+      .send({ users: [userThreeId] })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    expect(updatedConversation).toBeDefined();
+    expect(updatedConversation.body).toBeDefined();
+    expect(updatedConversation.body).toHaveProperty('users');
+    expect(updatedConversation.body.users).toContain(userOneId);
+    expect(updatedConversation.body.users).toContain(userTwoId);
+    expect(updatedConversation.body.users).toContain(userThreeId);
+  });
+
+  it('responds with a 404 due to having a userId that does not correspond to an actual user', async () => {
+    await agent
+      .post(`/conversation/${conversation.body._id}/users`)
+      .send({ users: [new mongoose.Types.ObjectId()] })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(404);
+  });
+
+  it('responds with a 404 due to having no users to add that are not already in the conversation', async () => {
+    await agent
+      .post(`/conversation/${conversation.body._id}/users`)
+      .send({ users: [userTwoId] })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(404);
+  });
+
+  it('responds with a 400 due to attempting to add self to conversation', async () => {
+    await agent
+      .post(`/conversation/${conversation.body._id}/users`)
+      .send({ users: [userOneId] })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
+});
+
 describe('POST /conversation', () => {
   it('responds with a 201 and creates new conversation', async () => {
     const conversation = await agent
@@ -152,30 +268,11 @@ describe('POST /conversation', () => {
   });
 
   it(`responds with a 400 due to having > ${maxUsers} users`, async () => {
-    let users = [];
-
-    for (let i = 0; i < maxUsers; i++) {
-      let currentUsername = 'repeatusername' + (i + 1);
-      await agent
-        .post('/signup')
-        .send({
-          username: currentUsername,
-          password: 'P@ssw0rd',
-          confirmPassword: 'P@ssw0rd',
-        })
-        .expect(201);
-      let currentUser = await User.findOne({ username: currentUsername });
-      if (currentUser) {
-        users.push(currentUser._id);
-      }
-    }
-    users.push(userOneId);
-
     await agent
       .post('/conversation')
       .send({
         name: 'toomanyusersconversation',
-        users: users,
+        users: bulkUserArray,
       })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
