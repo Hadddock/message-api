@@ -33,3 +33,23 @@ export const validatePostConversation = [
     next();
   },
 ];
+
+export const validateDeleteUserFromConversation = [
+  check('conversation').isMongoId(),
+  check('users')
+    .isArray()
+    .custom((value: Array<string>) => {
+      const set = new Set(value);
+      return set.size === value.length;
+    })
+    .custom((value: Array<string>) =>
+      value.every((id: string) => mongoose.Types.ObjectId.isValid(id))
+    ),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  },
+];
