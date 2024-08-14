@@ -1,8 +1,10 @@
 import { Message } from './Message';
 import { User } from './User';
+
 export interface Conversation {
   id: string;
   name: string;
+  admins: Array<User>;
   users: Array<User>;
   creationTime: Date;
   getPreview(): Promise<Preview>;
