@@ -3,11 +3,13 @@ import {
   postConversation,
   getPreviews,
   postAddUsers,
+  deleteUsersFromConversation,
 } from '../controllers/conversationController';
 import asyncHandler from 'express-async-handler';
 import { checkAuthentication } from '../middleware/authentication';
 import {
   validatePostConversation,
+  validateDeleteUsersFromConversation,
   validateAddUsers,
 } from '../middleware/validators/conversationValidator';
 
@@ -18,6 +20,13 @@ router.post(
   checkAuthentication,
   validateAddUsers,
   asyncHandler(postAddUsers)
+);
+
+router.delete(
+  '/conversation/:conversation/users',
+  checkAuthentication,
+  validateDeleteUsersFromConversation,
+  asyncHandler(deleteUsersFromConversation)
 );
 
 router.post(

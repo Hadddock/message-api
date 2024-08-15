@@ -18,12 +18,8 @@ export const postConversation: RequestHandler = async (req, res, next) => {
     admins: [req.user?.id],
   });
 
-  try {
-    await conversation.save();
-    res.status(201).json(conversation);
-  } catch (error) {
-    next(error);
-  }
+  await conversation.save();
+  res.status(201).json(conversation);
 };
 
 export const getPreviews: RequestHandler = async (req, res, next) => {
@@ -38,6 +34,53 @@ export const getPreviews: RequestHandler = async (req, res, next) => {
   const previews = await Promise.all(conversations.map((c) => c.getPreview()));
 
   res.status(200).json(previews);
+};
+
+export const deleteUsersFromConversation: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
+  const conversationId = req.params.conversation;
+  const usersToRemove: string[] = req.body.users;
+
+  const conversation = await Conversation.findById(conversationId)
+    .populate('admins')
+    .populate('users');
+
+  if (!conversation) {
+    return res.status(404).json({ message: 'Conversation not found' });
+  }
+
+  const adminIds = conversation.admins.map((a) => a.id);
+
+  if (!req.user?.id) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  if (!adminIds.includes(req.user?.id)) {
+    return res
+      .status(403)
+      .json({ message: 'Only admins can remove users from a conversation' });
+  }
+
+  const conversationUsers = conversation.users.map((user) =>
+    user.id.toString()
+  );
+
+  if (conversationUsers.every((id) => !usersToRemove.includes(id))) {
+    return res.status(404).json({
+      message: 'No listed users are in the conversation',
+    });
+  }
+
+  conversation.users = conversation.users.filter(
+    (user) => !usersToRemove.includes(user.id.toString())
+  );
+
+  await conversation.save();
+  console.log('conversation', conversation);
+  return res.status(200).json(conversation);
 };
 
 export const postAddUsers: RequestHandler = async (req, res, next) => {

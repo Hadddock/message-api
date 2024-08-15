@@ -9,6 +9,7 @@ const agent = request.agent(app);
 let userOneId: mongoose.Types.ObjectId;
 let userTwoId: mongoose.Types.ObjectId;
 let userThreeId: mongoose.Types.ObjectId;
+let userFourId: mongoose.Types.ObjectId;
 
 let bulkUserArray: string[] = [];
 
@@ -53,6 +54,14 @@ beforeAll(async () => {
       confirmPassword: 'P@ssw0rd',
     })
     .expect(201);
+  await agent
+    .post('/signup')
+    .send({
+      username: 'username4',
+      password: 'P@ssw0rd',
+      confirmPassword: 'P@ssw0rd',
+    })
+    .expect(201);
   for (let i = 0; i < maxUsers; i++) {
     await agent
       .post('/signup')
@@ -79,13 +88,20 @@ beforeAll(async () => {
   const userOne = await User.findOne({ username: 'username' });
   const userTwo = await User.findOne({ username: 'username2' });
   const userThree = await User.findOne({ username: 'username3' });
+  const userFour = await User.findOne({ username: 'username4' });
 
-  if (userOne === null || userTwo === null || userThree === null)
+  if (
+    userOne === null ||
+    userTwo === null ||
+    userThree === null ||
+    userFour === null
+  )
     throw new Error('Users not found');
 
   userOneId = userOne.id;
   userTwoId = userTwo.id;
   userThreeId = userThree.id;
+  userFourId = userFour.id;
 });
 
 describe('GET /conversations/previews', () => {
@@ -154,6 +170,89 @@ describe('GET /conversations/previews', () => {
 
       expect(conversationPreviews.body[0].latestMessage.content).toBe('hello');
     });
+  });
+});
+
+describe.only('DELETE /conversation/:conversation/users', () => {
+  let conversation: any;
+  beforeAll(async () => {
+    conversation = await agent
+      .post('/conversation')
+      .send({
+        name: 'new conversation',
+        users: [userOneId, userTwoId, userThreeId],
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(201);
+  });
+
+  it('responds with a 403 due to not being authenticated', async () => {
+    await request(app)
+      .delete(`/conversation/${conversation.body._id}/users`)
+      .send({ users: [userThreeId] })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(403);
+  });
+
+  it('responds with a 403 due to not being authenticated', async () => {
+    await request(app)
+      .delete(`/conversation/${conversation.body._id}/users`)
+      .send({ users: [userThreeId] })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(403);
+  });
+
+  it('responds with a 400 due to user attempting to delete themselves from a conversation', async () => {
+    await agent
+      .delete(`/conversation/${conversation.body._id}/users`)
+      .send({ users: [userOneId] })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
+
+  it('resonds with a 403 due to non admin attempting to delete users from a conversation', async () => {
+    await agent
+      .post('/login')
+      .send({ username: 'username2', password: 'P@ssw0rd' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    await agent
+      .delete(`/conversation/${conversation.body._id}/users`)
+      .send({ users: [userOneId] })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(403);
+
+    await agent
+      .post('/login')
+      .send({ username: 'username', password: 'P@ssw0rd' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+  });
+
+  it('responds with a 404 due to having a userId that does not correspond to an actual user', async () => {
+    await agent
+      .delete(`/conversation/${conversation.body._id}/users`)
+      .send({ users: [new mongoose.Types.ObjectId()] })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(404);
+  });
+
+  it('responds with a 404 due to having no users to remove that are in the conversation', async () => {
+    await agent
+      .delete(`/conversation/${conversation.body._id}/users`)
+      .send({ users: [userFourId] })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(404);
   });
 });
 
