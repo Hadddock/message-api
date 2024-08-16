@@ -40,6 +40,10 @@ export const validateAddUsers = [
   },
 ];
 
+export const validateDeleteLeaveConversation = [
+  check('conversation').isMongoId().withMessage('Invalid conversation id'),
+];
+
 export const validatePostConversation = [
   check('name')
     .isString()

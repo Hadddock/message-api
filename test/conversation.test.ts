@@ -173,7 +173,49 @@ describe('GET /conversations/previews', () => {
   });
 });
 
-describe.only('DELETE /conversation/:conversation/users', () => {
+describe.only('DELETE /conversation/:conversation/leave', () => {
+  let conversation: any;
+  beforeAll(async () => {
+    conversation = await agent
+      .post('/conversation')
+      .send({
+        name: 'new conversation for leaving',
+        users: [userOneId, userTwoId, userThreeId],
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(201);
+  });
+
+  it('responds with a 403 due to not being authenticated', async () => {
+    await request(app)
+      .delete(`/conversation/${conversation.body._id}/leave`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(403);
+  });
+
+  it('responds with a 404 due to having a conversationId that does not correspond to an actual conversation', async () => {
+    await agent
+      .delete(`/conversation/${new mongoose.Types.ObjectId()}/leave`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(404);
+  });
+
+  it('responds with a 200 and successfully leaves the conversation', async () => {
+    await agent
+      .delete(`/conversation/${conversation.body._id}/leave`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+  });
+
+  //test for admin promotion on leaving
+  //test for last user leaving deleting conversation
+});
+
+describe('DELETE /conversation/:conversation/users', () => {
   let conversation: any;
   beforeAll(async () => {
     conversation = await agent

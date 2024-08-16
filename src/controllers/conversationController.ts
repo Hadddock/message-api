@@ -36,6 +36,36 @@ export const getPreviews: RequestHandler = async (req, res, next) => {
   res.status(200).json(previews);
 };
 
+export const deleteLeaveConversation: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
+  const conversation = await Conversation.findById(req.params.conversation)
+    .populate('users')
+    .populate('admins');
+
+  if (!conversation) {
+    return res.status(404).json({ message: 'Conversation not found' });
+  }
+
+  const userId = req.user?.id;
+  const conversationUserCount = conversation.users.length;
+  conversation.users = conversation.users.filter((u) => u.id !== userId);
+  conversation.admins = conversation.admins.filter((a) => a.id !== userId);
+
+  if (conversationUserCount === conversation.users.length) {
+    return res.status(404).json({ message: 'User not in conversation' });
+  }
+
+  if (conversation.users.length > 1 && conversation.admins.length == 0) {
+    conversation.admins = [conversation.users[0]];
+  }
+
+  await conversation.save();
+  return res.status(200).json({ message: 'User left conversation' });
+};
+
 export const deleteUsersFromConversation: RequestHandler = async (
   req,
   res,
@@ -75,6 +105,10 @@ export const deleteUsersFromConversation: RequestHandler = async (
   }
 
   conversation.users = conversation.users.filter(
+    (user) => !usersToRemove.includes(user.id.toString())
+  );
+
+  conversation.admins = conversation.admins.filter(
     (user) => !usersToRemove.includes(user.id.toString())
   );
 
