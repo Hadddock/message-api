@@ -173,7 +173,7 @@ describe('GET /conversations/previews', () => {
   });
 });
 
-describe.only('DELETE /conversation/:conversation/leave', () => {
+describe('DELETE /conversation/:conversation/leave', () => {
   let conversation: any;
   beforeAll(async () => {
     conversation = await agent
@@ -213,6 +213,68 @@ describe.only('DELETE /conversation/:conversation/leave', () => {
 
   //test for admin promotion on leaving
   //test for last user leaving deleting conversation
+});
+
+describe.only('DELETE /conversation/:conversation', () => {
+  let conversation: any;
+  beforeAll(async () => {
+    conversation = await agent
+      .post('/conversation')
+      .send({
+        name: 'new conversation for deleting',
+        users: [userOneId, userTwoId, userThreeId],
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(201);
+  });
+
+  it('responds with a 403 due to not being authenticated', async () => {
+    await request(app)
+      .delete(`/conversation/${conversation.body._id}`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(403);
+  });
+
+  it('responds with a 404 due to having a conversationId that does not correspond to an actual conversation', async () => {
+    await agent
+      .delete(`/conversation/${new mongoose.Types.ObjectId()}`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(404);
+  });
+
+  it('responds with a 403 due to not being an admin of the conversation', async () => {
+    await agent
+      .post('/login')
+      .send({ username: 'username3', password: 'P@ssw0rd' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    await agent
+      .delete(`/conversation/${conversation.body._id}`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(403);
+
+    await agent
+      .post('/login')
+      .send({ username: 'username', password: 'P@ssw0rd' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+  });
+
+  it('responds with a 200 and successfully deletes the conversation', async () => {
+    await agent
+      .delete(`/conversation/${conversation.body._id}`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+    //test for conversation presence after deleting
+  });
 });
 
 describe('DELETE /conversation/:conversation/users', () => {

@@ -1,7 +1,30 @@
 import User from '../models/User';
+import Message from '../models/Message';
 import Conversation from '../models/Conversation';
 import { RequestHandler } from 'express';
 import { maxUsers } from '../interfaces/Conversation';
+
+export const deleteConversation: RequestHandler = async (req, res, next) => {
+  let conversation = await Conversation.findById(
+    req.params.conversation
+  ).populate('admins');
+  if (!conversation) {
+    return res.status(404).json({ message: 'Conversation not found' });
+  }
+
+  const adminIds = conversation.admins.map((a) => a.id);
+  const userId = req.user?.id ?? '';
+  if (!adminIds.includes(userId)) {
+    return res
+      .status(403)
+      .json({ message: 'Only conversation admins can delete a conversation' });
+  }
+
+  await conversation.deleteOne({ _id: conversation._id });
+  await Message.deleteMany({ conversation: conversation._id });
+
+  res.status(200).json({ message: 'Conversation deleted' });
+};
 
 export const postConversation: RequestHandler = async (req, res, next) => {
   let { name, users } = req.body;

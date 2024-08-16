@@ -9,6 +9,17 @@ import {
   maxNameLength,
 } from '../../interfaces/Conversation';
 
+export const validateDeleteConversation = [
+  check('conversation').isMongoId().withMessage('Invalid conversation id'),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  },
+];
+
 export const validateAddUsers = [
   check('users')
     .isArray()
@@ -42,6 +53,13 @@ export const validateAddUsers = [
 
 export const validateDeleteLeaveConversation = [
   check('conversation').isMongoId().withMessage('Invalid conversation id'),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  },
 ];
 
 export const validatePostConversation = [
