@@ -9,8 +9,38 @@ import {
   maxNameLength,
 } from '../../interfaces/Conversation';
 
+import { maxMessages } from './../../controllers/conversationController';
+
 export const validateDeleteConversation = [
   check('conversation').isMongoId().withMessage('Invalid conversation id'),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  },
+];
+
+export const validateGetConversationMessages = [
+  check('conversation').isMongoId().withMessage('Invalid conversation id'),
+  check('limit')
+    .isNumeric()
+    .optional()
+    .withMessage('Invalid limit')
+    .custom((value: number) => value <= maxMessages)
+    .withMessage(
+      `limit is too large. Limit must be less than or equal to ${maxMessages}`
+    )
+    .custom((value: number) => value > 0)
+    .withMessage('limit must be greater than 0'),
+  check('page')
+    .isNumeric()
+    .optional()
+    .withMessage('Invalid page')
+    .custom((value: number) => value > 0)
+    .withMessage('page must be greater than 0'),
+
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

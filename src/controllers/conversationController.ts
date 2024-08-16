@@ -4,6 +4,10 @@ import Conversation from '../models/Conversation';
 import { RequestHandler } from 'express';
 import { maxUsers } from '../interfaces/Conversation';
 
+export const maxMessages = 100;
+
+export const defaultLimit = 10;
+
 export const getConversation: RequestHandler = async (req, res, next) => {
   const conversation = await Conversation.findById(req.params.conversation)
     .populate('users')
@@ -16,14 +20,58 @@ export const getConversation: RequestHandler = async (req, res, next) => {
   const conversationUserIds = conversation.users.map((u) => u.id);
   const userId = req.user?.id ?? '';
   if (!conversationUserIds.includes(userId)) {
-    return res
-      .status(403)
-      .json({
-        message: 'Only users in a conversation can access its information',
-      });
+    return res.status(403).json({
+      message: 'Only users in a conversation can access its information',
+    });
+  }
+  return res.status(200).json(conversation);
+};
+
+export const getConversationMessages: RequestHandler = async (
+  req,
+  res,
+  next
+) => {
+  const conversation = await Conversation.findById(req.params.conversation)
+    .populate('users')
+    .populate('admins');
+  if (!conversation) {
+    return res.status(404).json({ message: 'Conversation not found' });
   }
 
-  res.status(200).json(conversation);
+  const conversationUserIds = conversation.users.map((u) => u.id);
+  const userId = req.user?.id ?? '';
+
+  if (!conversationUserIds.includes(userId)) {
+    return res.status(403).json({
+      message: 'Only users in a conversation can access its information',
+    });
+  }
+
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || defaultLimit;
+  const startIndex = (page - 1) * limit;
+  const endIndex = page * limit;
+
+  const messages = await Message.find({ conversation: conversation._id })
+    .sort({ postTime: -1 })
+    .skip(startIndex)
+    .limit(limit);
+
+  const totalMessages = await Message.countDocuments({
+    conversation: conversation._id,
+  });
+
+  const totalPages = Math.ceil(totalMessages / limit);
+
+  const pagination = {
+    currentPage: page,
+    totalPages: totalPages,
+    pageSize: limit,
+    totalItems: totalMessages,
+  };
+
+  return res.status(200).json({ messages, pagination });
 };
 
 export const deleteConversation: RequestHandler = async (req, res, next) => {
@@ -220,6 +268,6 @@ export const postAddUsers: RequestHandler = async (req, res, next) => {
 
   currentConversation.users = [...currentConversation.users, ...users];
 
-    await currentConversation.save();
+  await currentConversation.save();
   return res.status(200).json(currentConversation);
 };

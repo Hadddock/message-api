@@ -5,6 +5,7 @@ import {
   postAddUsers,
   deleteUsersFromConversation,
   deleteLeaveConversation,
+  getConversationMessages,
   deleteConversation,
   getConversation,
 } from '../controllers/conversationController';
@@ -15,6 +16,7 @@ import {
   validateDeleteLeaveConversation,
   validateDeleteUsersFromConversation,
   validateAddUsers,
+  validateGetConversationMessages,
   validateDeleteConversation,
   validateGetConversation,
 } from '../middleware/validators/conversationValidator';
@@ -26,6 +28,13 @@ router.post(
   checkAuthentication,
   validateAddUsers,
   asyncHandler(postAddUsers)
+);
+
+router.get(
+  '/conversation/:conversation/messages',
+  checkAuthentication,
+  validateGetConversationMessages,
+  asyncHandler(getConversationMessages)
 );
 
 router.delete(

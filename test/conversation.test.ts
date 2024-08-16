@@ -4,6 +4,7 @@ import app from '../test/__mocks__/mockApp';
 import dbConnection from '../test/__mocks__/mockDatabase';
 import User from '../src/models/User';
 import mongoose from 'mongoose';
+import { maxMessages } from '../src/controllers/conversationController';
 
 const agent = request.agent(app);
 let userOneId: mongoose.Types.ObjectId;
@@ -294,6 +295,219 @@ describe('GET /conversation/:conversation', () => {
     expect(conversationUsers).toContain(userTwoId);
     expect(conversationResponse.body.admins).toBeInstanceOf(Array);
     expect(conversationAdmins).toContain(userOneId);
+  });
+});
+
+describe('GET /conversation/:conversation/messages', () => {
+  let conversation: any;
+  beforeAll(async () => {
+    conversation = await agent
+      .post('/conversation')
+      .send({
+        name: 'new conversation for messages retrival',
+        users: [userOneId, userTwoId],
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(201);
+
+    for (let i = 0; i < maxMessages; i++) {
+      await agent
+        .post('/conversation/' + conversation.body._id + '/message')
+        .send({ content: 'hello' + i, conversation: conversation.body._id })
+        .expect(201);
+    }
+  });
+
+  it('responds with a 200 and returns the conversation messages', async () => {
+    const conversationMessages = await agent
+      .get(`/conversation/${conversation.body._id}/messages`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    expect(conversationMessages).toBeDefined();
+    expect(conversationMessages.body).toBeDefined();
+    expect(conversationMessages.body).toHaveProperty('messages');
+    expect(conversationMessages.body).toHaveProperty('pagination');
+    expect(conversationMessages.body.pagination).toBeDefined();
+    expect(conversationMessages.body.pagination).toHaveProperty('currentPage');
+    expect(conversationMessages.body.pagination).toHaveProperty('totalPages');
+    expect(conversationMessages.body.pagination).toHaveProperty('pageSize');
+    expect(conversationMessages.body.pagination).toHaveProperty('totalItems');
+    expect(conversationMessages.body.messages).toBeInstanceOf(Array);
+  });
+
+  it('responds with a 200 and returns the correct pagination values', async () => {
+    const conversationMessages = await agent
+      .get(`/conversation/${conversation.body._id}/messages`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    expect(conversationMessages).toBeDefined();
+    expect(conversationMessages.body).toBeDefined();
+    expect(conversationMessages.body).toHaveProperty('messages');
+    expect(conversationMessages.body).toHaveProperty('pagination');
+    expect(conversationMessages.body.messages).toBeInstanceOf(Array);
+    expect(conversationMessages.body.messages.length).toBe(10);
+    expect(conversationMessages.body.pagination).toBeDefined();
+    expect(conversationMessages.body.pagination).toHaveProperty('currentPage');
+    expect(conversationMessages.body.pagination).toHaveProperty('totalPages');
+    expect(conversationMessages.body.pagination).toHaveProperty('pageSize');
+    expect(conversationMessages.body.pagination).toHaveProperty('totalItems');
+    expect(conversationMessages.body.pagination.currentPage).toBe(1);
+    expect(conversationMessages.body.pagination.totalPages).toBe(10);
+    expect(conversationMessages.body.pagination.pageSize).toBe(10);
+    expect(conversationMessages.body.pagination.totalItems).toBe(100);
+  });
+
+  it('responds with a 200 and returns the correct pagination results with the max page size', async () => {
+    const conversationMessages = await agent
+      .get(`/conversation/${conversation.body._id}/messages`)
+      .query({ limit: maxMessages })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    expect(conversationMessages).toBeDefined();
+    expect(conversationMessages.body).toBeDefined();
+    expect(conversationMessages.body).toHaveProperty('messages');
+    expect(conversationMessages.body).toHaveProperty('pagination');
+    expect(conversationMessages.body.messages).toBeInstanceOf(Array);
+    expect(conversationMessages.body.messages.length).toBe(100);
+    expect(conversationMessages.body.pagination).toBeDefined();
+    expect(conversationMessages.body.pagination).toHaveProperty('currentPage');
+    expect(conversationMessages.body.pagination).toHaveProperty('totalPages');
+    expect(conversationMessages.body.pagination).toHaveProperty('pageSize');
+    expect(conversationMessages.body.pagination).toHaveProperty('totalItems');
+    expect(conversationMessages.body.pagination.currentPage).toBe(1);
+    expect(conversationMessages.body.pagination.totalPages).toBe(1);
+    expect(conversationMessages.body.pagination.pageSize).toBe(100);
+    expect(conversationMessages.body.pagination.totalItems).toBe(100);
+  });
+
+  it('responds with a 200 and returns the correct results with different messages', async () => {
+    const conversationMessages = await agent
+      .get(`/conversation/${conversation.body._id}/messages`)
+      .query({ page: 1 })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    const converastionMessagesSecondPage = await agent
+      .get(`/conversation/${conversation.body._id}/messages`)
+      .query({ page: 2 })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    expect(conversationMessages).toBeDefined();
+    expect(conversationMessages.body).toBeDefined();
+    expect(conversationMessages.body).toHaveProperty('messages');
+    expect(conversationMessages.body).toHaveProperty('pagination');
+    expect(conversationMessages.body.messages).toBeInstanceOf(Array);
+    expect(conversationMessages.body.messages.length).toBe(10);
+    expect(conversationMessages.body.pagination).toBeDefined();
+    expect(conversationMessages.body.pagination).toHaveProperty('currentPage');
+    expect(conversationMessages.body.pagination).toHaveProperty('totalPages');
+    expect(conversationMessages.body.pagination).toHaveProperty('pageSize');
+    expect(conversationMessages.body.pagination).toHaveProperty('totalItems');
+    expect(conversationMessages.body.pagination.currentPage).toBe(1);
+    expect(conversationMessages.body.pagination.totalPages).toBe(10);
+    expect(conversationMessages.body.pagination.pageSize).toBe(10);
+    expect(conversationMessages.body.pagination.totalItems).toBe(100);
+
+    expect(converastionMessagesSecondPage).toBeDefined();
+    expect(converastionMessagesSecondPage.body).toBeDefined();
+    expect(converastionMessagesSecondPage.body).toHaveProperty('messages');
+    expect(converastionMessagesSecondPage.body).toHaveProperty('pagination');
+    expect(converastionMessagesSecondPage.body.messages).toBeInstanceOf(Array);
+    expect(converastionMessagesSecondPage.body.messages.length).toBe(10);
+    expect(converastionMessagesSecondPage.body.pagination).toBeDefined();
+    expect(converastionMessagesSecondPage.body.pagination).toHaveProperty(
+      'currentPage'
+    );
+    expect(converastionMessagesSecondPage.body.pagination).toHaveProperty(
+      'totalPages'
+    );
+    expect(converastionMessagesSecondPage.body.pagination).toHaveProperty(
+      'pageSize'
+    );
+    expect(converastionMessagesSecondPage.body.pagination).toHaveProperty(
+      'totalItems'
+    );
+    expect(converastionMessagesSecondPage.body.pagination.currentPage).toBe(2);
+    expect(converastionMessagesSecondPage.body.pagination.totalPages).toBe(10);
+    expect(converastionMessagesSecondPage.body.pagination.pageSize).toBe(10);
+    expect(converastionMessagesSecondPage.body.pagination.totalItems).toBe(100);
+
+    //add comparison of messages
+  });
+
+  it('responds with a 403 due to not being authenticated', async () => {
+    await request(app)
+      .get(`/conversation/${conversation.body._id}/messages`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(403);
+  });
+
+  it('responds with a 404 due to having a conversationId that does not correspond to an actual conversation', async () => {
+    await agent
+      .get(`/conversation/${new mongoose.Types.ObjectId()}/messages`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(404);
+  });
+
+  it(`responds with a 400 due to having a limit exceeding the maximum of ${maxMessages}`, async () => {
+    await agent
+      .get(`/conversation/${conversation.body._id}/messages`)
+      .query({ limit: maxMessages + 1 })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
+
+  it(`responds with a 400 due to having a limit <= 0`, async () => {
+    await agent
+      .get(`/conversation/${conversation.body._id}/messages`)
+      .query({ limit: 0 })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
+
+  it(`responds with a 400 due to having a page <= 0`, async () => {
+    await agent
+      .get(`/conversation/${conversation.body._id}/messages`)
+      .query({ page: 0 })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
+
+  it('responds with a 403 due to user not being a part of the conversation', async () => {
+    await agent
+      .post('/login')
+      .send({ username: 'username3', password: 'P@ssw0rd' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    await agent
+      .get(`/conversation/${conversation.body._id}/messages`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(403);
+
+    await agent
+      .post('/login')
+      .send({ username: 'username', password: 'P@ssw0rd' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
   });
 });
 
