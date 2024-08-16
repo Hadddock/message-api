@@ -81,6 +81,12 @@ export const deleteLeaveConversation: RequestHandler = async (
     return res.status(404).json({ message: 'User not in conversation' });
   }
 
+  if (conversation.users.length === 0) {
+    await Conversation.deleteOne({ _id: conversation._id });
+    await Message.deleteMany({ conversation: conversation._id });
+    return res.status(200).json({ message: 'User left conversation' });
+  }
+
   if (conversation.users.length > 1 && conversation.admins.length == 0) {
     conversation.admins = [conversation.users[0]];
   }
