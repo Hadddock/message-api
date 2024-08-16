@@ -215,7 +215,7 @@ describe('DELETE /conversation/:conversation/leave', () => {
   //test for last user leaving deleting conversation
 });
 
-describe.only('DELETE /conversation/:conversation', () => {
+describe('DELETE /conversation/:conversation', () => {
   let conversation: any;
   beforeAll(async () => {
     conversation = await agent
@@ -426,13 +426,13 @@ describe('POST /conversation/:conversation/users', () => {
       .expect(404);
   });
 
-  it('responds with a 404 due to having no users to add that are not already in the conversation', async () => {
+  it('responds with a 400 due to having no users to add that are not already in the conversation', async () => {
     await agent
       .post(`/conversation/${conversation.body._id}/users`)
       .send({ users: [userTwoId] })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
-      .expect(404);
+      .expect(400);
   });
 
   it('responds with a 400 due to attempting to add self to conversation', async () => {

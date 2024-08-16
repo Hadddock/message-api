@@ -174,6 +174,10 @@ export const postAddUsers: RequestHandler = async (req, res, next) => {
 
   users = users.filter((u: string) => !currentConversationUserIds.includes(u));
 
+  if (users.length === 0) {
+    return res.status(400).json({ message: 'No new users to add' });
+  }
+
   const foundUsers = await User.find({ _id: { $in: users } });
 
   let foundUsersIds = foundUsers.map((u) => u.id);
