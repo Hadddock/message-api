@@ -45,7 +45,7 @@ export const deleteConversation: RequestHandler = async (req, res, next) => {
   await conversation.deleteOne({ _id: conversation._id });
   await Message.deleteMany({ conversation: conversation._id });
 
-  res.status(200).json({ message: 'Conversation deleted' });
+  return res.status(200).json({ message: 'Conversation deleted' });
 };
 
 export const postConversation: RequestHandler = async (req, res, next) => {
@@ -64,7 +64,7 @@ export const postConversation: RequestHandler = async (req, res, next) => {
   });
 
   await conversation.save();
-  res.status(201).json(conversation);
+  return res.status(201).json(conversation);
 };
 
 export const getPreviews: RequestHandler = async (req, res, next) => {
@@ -78,7 +78,7 @@ export const getPreviews: RequestHandler = async (req, res, next) => {
 
   const previews = await Promise.all(conversations.map((c) => c.getPreview()));
 
-  res.status(200).json(previews);
+  return res.status(200).json(previews);
 };
 
 export const deleteLeaveConversation: RequestHandler = async (
@@ -164,7 +164,7 @@ export const deleteUsersFromConversation: RequestHandler = async (
   );
 
   await conversation.save();
-  console.log('conversation', conversation);
+
   return res.status(200).json(conversation);
 };
 
@@ -220,10 +220,6 @@ export const postAddUsers: RequestHandler = async (req, res, next) => {
 
   currentConversation.users = [...currentConversation.users, ...users];
 
-  try {
     await currentConversation.save();
-    res.status(200).json(currentConversation);
-  } catch (error) {
-    next(error);
-  }
+  return res.status(200).json(currentConversation);
 };
