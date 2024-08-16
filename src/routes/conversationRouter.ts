@@ -6,6 +6,7 @@ import {
   deleteUsersFromConversation,
   deleteLeaveConversation,
   deleteConversation,
+  getConversation,
 } from '../controllers/conversationController';
 import asyncHandler from 'express-async-handler';
 import { checkAuthentication } from '../middleware/authentication';
@@ -15,6 +16,7 @@ import {
   validateDeleteUsersFromConversation,
   validateAddUsers,
   validateDeleteConversation,
+  validateGetConversation,
 } from '../middleware/validators/conversationValidator';
 
 const router = express.Router();
@@ -38,6 +40,13 @@ router.delete(
   checkAuthentication,
   validateDeleteUsersFromConversation,
   asyncHandler(deleteUsersFromConversation)
+);
+
+router.get(
+  '/conversation/:conversation',
+  checkAuthentication,
+  validateGetConversation,
+  asyncHandler(getConversation)
 );
 
 router.delete(

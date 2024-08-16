@@ -215,6 +215,88 @@ describe('DELETE /conversation/:conversation/leave', () => {
   //test for last user leaving deleting conversation
 });
 
+describe('GET /conversation/:conversation', () => {
+  let conversation: any;
+  beforeAll(async () => {
+    conversation = await agent
+      .post('/conversation')
+      .send({
+        name: 'new conversation',
+        users: [userOneId, userTwoId],
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(201);
+  });
+
+  it('responds with a 403 due to not being authenticated', async () => {
+    await request(app)
+      .get(`/conversation/${conversation.body._id}`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(403);
+  });
+
+  it('responds with a 404 due to having a conversationId that does not correspond to an actual conversation', async () => {
+    await agent
+      .get(`/conversation/${new mongoose.Types.ObjectId()}`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(404);
+  });
+
+  it('responds with a 403 due to user not being a part of the conversation', async () => {
+    await agent
+      .post('/login')
+      .send({ username: 'username3', password: 'P@ssw0rd' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    await agent
+      .get(`/conversation/${conversation.body._id}`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(403);
+
+    await agent
+      .post('/login')
+      .send({ username: 'username', password: 'P@ssw0rd' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+  });
+
+  it('responds with a 200 and returns the conversation', async () => {
+    const conversationResponse = await agent
+      .get(`/conversation/${conversation.body._id}`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    expect(conversationResponse).toBeDefined();
+    expect(conversationResponse.body).toBeDefined();
+    expect(conversationResponse.body).toHaveProperty('name');
+    expect(conversationResponse.body).toHaveProperty('admins');
+    expect(conversationResponse.body).toHaveProperty('users');
+    expect(conversationResponse.body).toHaveProperty('creationTime');
+    expect(conversationResponse.body.name).toBe('new conversation');
+
+    const conversationUsers = conversationResponse.body.users.map(
+      (user: any) => user._id
+    );
+
+    const conversationAdmins = conversationResponse.body.admins.map(
+      (admin: any) => admin._id
+    );
+    expect(conversationResponse.body.users).toBeInstanceOf(Array);
+    expect(conversationUsers).toContain(userOneId);
+    expect(conversationUsers).toContain(userTwoId);
+    expect(conversationResponse.body.admins).toBeInstanceOf(Array);
+    expect(conversationAdmins).toContain(userOneId);
+  });
+});
+
 describe('DELETE /conversation/:conversation', () => {
   let conversation: any;
   beforeAll(async () => {

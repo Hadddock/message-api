@@ -4,6 +4,28 @@ import Conversation from '../models/Conversation';
 import { RequestHandler } from 'express';
 import { maxUsers } from '../interfaces/Conversation';
 
+export const getConversation: RequestHandler = async (req, res, next) => {
+  const conversation = await Conversation.findById(req.params.conversation)
+    .populate('users')
+    .populate('admins');
+
+  if (!conversation) {
+    return res.status(404).json({ message: 'Conversation not found' });
+  }
+
+  const conversationUserIds = conversation.users.map((u) => u.id);
+  const userId = req.user?.id ?? '';
+  if (!conversationUserIds.includes(userId)) {
+    return res
+      .status(403)
+      .json({
+        message: 'Only users in a conversation can access its information',
+      });
+  }
+
+  res.status(200).json(conversation);
+};
+
 export const deleteConversation: RequestHandler = async (req, res, next) => {
   let conversation = await Conversation.findById(
     req.params.conversation
