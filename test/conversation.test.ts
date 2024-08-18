@@ -697,6 +697,59 @@ describe('POST /conversation/:conversation/users', () => {
       .expect(400);
   });
 
+  it('responds with a 403 due to attempting to add only users who have blocked the current user', async () => {
+    await agent
+      .post('/login')
+      .send({ username: 'username3', password: 'P@ssw0rd' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    await agent
+      .put(`/users/${userThreeId}/block`)
+      .set('Accept', 'application/json')
+      .send({ blockedUserId: userOneId })
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    await agent
+      .post('/login')
+      .send({ username: 'username', password: 'P@ssw0rd' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    await agent
+      .post(`/conversation/${conversation.body._id}/users`)
+      .send({ users: [userThreeId] })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(403);
+
+    //reset block
+
+    await agent
+      .post('/login')
+      .send({ username: 'username3', password: 'P@ssw0rd' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    await agent
+      .put(`/users/${userThreeId}/unblock`)
+      .set('Accept', 'application/json')
+      .send({ unblockedUserId: userOneId })
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    await agent
+      .post('/login')
+      .send({ username: 'username', password: 'P@ssw0rd' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+  });
+
   it('responds with a 200 and adds users to the conversation', async () => {
     const updatedConversation = await agent
       .post(`/conversation/${conversation.body._id}/users`)

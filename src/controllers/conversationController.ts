@@ -247,22 +247,39 @@ export const postAddUsers: RequestHandler = async (req, res, next) => {
   if (users.length === 0) {
     return res.status(400).json({ message: 'No new users to add' });
   }
+  //filter out users who have blocked the user attempting to add them
+  const requestedUserAdditions = await User.find({
+    _id: { $in: users },
+  }).populate('blockedUsers');
 
-  const foundUsers = await User.find({ _id: { $in: users } });
+  if (requestedUserAdditions.length === 0) {
+    return res.status(404).json({ message: 'Users not found' });
+  }
 
-  let foundUsersIds = foundUsers.map((u) => u.id);
+  requestedUserAdditions.forEach((u) => {
+    if (u.blockedUsers.some((b) => b.id === req.user?.id)) {
+      users = users.filter((id: string) => id !== u.id);
+    }
+  });
 
-  if (foundUsersIds.includes(req.user?.id)) {
+  if (users.length === 0) {
+    console.log("No users to add that haven't blocked you");
+    return res
+      .status(403)
+      .json({ message: 'No users to add that have not blocked you' });
+  }
+
+  if (users.includes(req.user?.id)) {
     return res
       .status(400)
       .json({ message: 'You cannot add yourself to a conversation' });
   }
 
-  if (foundUsers.length + currentConversation.users.length > maxUsers) {
+  if (users.length + currentConversation.users.length > maxUsers) {
     return res.status(400).json({ message: 'Too many users' });
   }
 
-  if (foundUsers.length < 1) {
+  if (users.length < 1) {
     return res.status(404).json({ message: 'No valid users to add' });
   }
 
