@@ -119,6 +119,9 @@ export const validatePostConversation = [
       return set.size === value.length;
     })
     .custom((value) => value.length >= minUsers && value.length <= maxUsers)
+    .withMessage(
+      'Conversations must contain between ${minUsers} and ${maxUsers} users'
+    )
     .custom((value: Array<string>) =>
       value.every((id: string) => mongoose.Types.ObjectId.isValid(id))
     ),

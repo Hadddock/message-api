@@ -831,7 +831,7 @@ describe('POST /conversation', () => {
       .expect(400);
   });
 
-  it('responds with a 400 due to having only one userId', (done) => {
+  it('responds with a 201 while only having one userId', (done) => {
     agent
       .post('/conversation')
       .send({
@@ -840,7 +840,7 @@ describe('POST /conversation', () => {
       })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
-      .expect(400, done);
+      .expect(201, done);
   });
 
   it('responds with a 400 due to having only one distinct userId', (done) => {
@@ -939,7 +939,7 @@ describe('POST /conversation', () => {
       .expect(403);
   });
 
-  it('responds with a 403 due to attempting to create a conversation with  only users who have blocked the current user', async () => {
+  it('responds with a 201 with only the current user due to attempting to create a conversation with  only users who have blocked the current user', async () => {
     await agent
       .post('/login')
       .send({ username: 'username3', password: 'P@ssw0rd' })
@@ -961,7 +961,7 @@ describe('POST /conversation', () => {
       .expect('Content-Type', /json/)
       .expect(200);
 
-    await agent
+    const currentConversation = await agent
       .post('/conversation')
       .send({
         name: 'new conversation',
@@ -969,7 +969,16 @@ describe('POST /conversation', () => {
       })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
-      .expect(403);
+      .expect(201);
+    expect(currentConversation).toBeDefined();
+    expect(currentConversation.body).toBeDefined();
+    expect(currentConversation.body).toHaveProperty('name');
+    expect(currentConversation.body).toHaveProperty('admins');
+    expect(currentConversation.body).toHaveProperty('users');
+    expect(currentConversation.body).toHaveProperty('creationTime');
+    expect(currentConversation.body.name).toBe('new conversation');
+    expect(currentConversation.body.users).toContain(userOneId);
+    expect(currentConversation.body.users.length).toBe(1);
 
     //reset block
 

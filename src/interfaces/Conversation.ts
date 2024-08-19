@@ -18,7 +18,7 @@ export interface Preview {
   latestMessage: Message;
 }
 const maxUsers = 12;
-const minUsers = 2;
+const minUsers = 1;
 const minNameLength = 2;
 const maxNameLength = 100;
 

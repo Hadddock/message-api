@@ -107,18 +107,9 @@ export const postConversation: RequestHandler = async (req, res, next) => {
     return res.status(400).json({ message: 'Invalid user id(s)' });
   }
 
-  foundUsers.forEach((u) => {
-    if (u.blockedUsers.some((b) => b.id === req.user?.id)) {
-      users = users.filter((id: string) => id !== u.id);
-    }
-  });
-
-  //only 1 including current user
-  if (users.length === 1) {
-    return res
-      .status(403)
-      .json({ message: 'No users to add that have not blocked you' });
-  }
+  users = foundUsers
+    .filter((user) => !user.blockedUsers.some((b) => b.id === req.user?.id))
+    .map((user) => user.id);
 
   const conversation = new Conversation({
     name,
