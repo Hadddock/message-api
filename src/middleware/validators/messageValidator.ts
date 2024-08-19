@@ -10,7 +10,7 @@ import {
 } from '../../interfaces/Message';
 
 export const validateDeleteMessage = [
-  check('message').isString().isMongoId(),
+  check('message').isString().isMongoId().withMessage('Invalid message id'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -21,19 +21,29 @@ export const validateDeleteMessage = [
 ];
 export const validatePostMessage = [
   check('content')
+    .optional()
     .isString()
-    .optional({})
+    .withMessage('content must be a string')
     .notEmpty()
+    .withMessage('content cannot be empty')
     .custom((value) => {
       return value.trim() !== '';
     })
-    .isLength({ min: minContentLength, max: maxContentLength }),
+    .isLength({ min: minContentLength, max: maxContentLength })
+    .withMessage(
+      `Content must be between ${minContentLength} and ${maxContentLength} characters`
+    ),
   check('imageUrl')
     .optional()
     .matches(imageRegex)
     .isString()
+    .withMessage('imageUrl must be a string')
     .isURL()
-    .isLength({ min: minImageUrlLength, max: maxImageUrlLength }),
+    .withMessage('Invalid imageUrl')
+    .isLength({ min: minImageUrlLength, max: maxImageUrlLength })
+    .withMessage(
+      `imageUrl must be between ${minImageUrlLength} and ${maxImageUrlLength} characters`
+    ),
 
   (req: Request, res: Response, next: NextFunction) => {
     if (req.body.content === undefined && req.body.imageUrl === undefined) {
