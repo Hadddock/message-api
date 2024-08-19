@@ -72,10 +72,7 @@ export const validateAddUsers = [
     .custom((value: Array<string>, { req }) => !value.includes(req.user.id))
     .withMessage('User cannot add themselves'),
 
-  check('conversation')
-    .isString()
-    .isMongoId()
-    .withMessage('Invalid conversation id'),
+  check('conversation').isMongoId().withMessage('Invalid conversation id'),
 
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);

@@ -10,7 +10,7 @@ import {
 } from '../../interfaces/Message';
 
 export const validateDeleteMessage = [
-  check('message').isString().isMongoId().withMessage('Invalid message id'),
+  check('message').isMongoId().withMessage('Invalid message id'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
