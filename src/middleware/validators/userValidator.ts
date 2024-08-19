@@ -1,6 +1,5 @@
 import { check, validationResult } from 'express-validator';
 import { Request, Response, NextFunction } from 'express';
-import { isStrongPassword } from 'validator';
 import {
   minUsernameLength,
   maxUsernameLength,
@@ -10,10 +9,13 @@ import {
 } from '../../interfaces/User';
 
 export const validateGetBlockedUsers = [
-  check('user').isMongoId(),
-  check('user').custom((value, { req }) => {
-    return req.user?.id === value;
-  }),
+  check('user')
+    .isMongoId()
+    .withMessage('Invalid user id')
+    .custom((value, { req }) => {
+      return req.user?.id === value;
+    })
+    .withMessage('User can only get their own blocked users'),
 
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
@@ -25,15 +27,20 @@ export const validateGetBlockedUsers = [
 ];
 
 export const validateBlock = [
-  check('blockedUserId').isString(),
-  check('blockedUserId').isMongoId(),
-  check('blockedUserId').custom((value, { req }) => {
-    return req.user?.id !== value;
-  }),
-  check('user').isMongoId(),
-  check('user').custom((value, { req }) => {
-    return req.user?.id === value;
-  }),
+  check('blockedUserId')
+    .isMongoId()
+    .withMessage('Invalid blocked user id')
+    .custom((value, { req }) => {
+      return req.user?.id !== value;
+    })
+    .withMessage('User cannot block themselves'),
+  check('user')
+    .isMongoId()
+    .withMessage('Invalid user id')
+    .custom((value, { req }) => {
+      return req.user?.id === value;
+    })
+    .withMessage('User can only block other users for themselves'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -44,15 +51,20 @@ export const validateBlock = [
 ];
 
 export const validateUnblock = [
-  check('unblockedUserId').isString(),
-  check('unblockedUserId').isMongoId(),
-  check('unblockedUserId').custom((value, { req }) => {
-    return req.user?.id !== value;
-  }),
-  check('user').isMongoId(),
-  check('user').custom((value, { req }) => {
-    return req.user?.id === value;
-  }),
+  check('unblockedUserId')
+    .isMongoId()
+    .withMessage('Invalid unblocked user id')
+    .custom((value, { req }) => {
+      return req.user?.id !== value;
+    })
+    .withMessage('User cannot block or unblock themselves'),
+  check('user')
+    .isMongoId()
+    .withMessage('Invalid user id')
+    .custom((value, { req }) => {
+      return req.user?.id === value;
+    })
+    .withMessage('User can only unblock other users for themselves'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -65,11 +77,20 @@ export const validateUnblock = [
 export const validateSearchUser = [
   check('username')
     .isString()
-    .notEmpty()
+    .withMessage('Invalid username')
     .trim()
-    .isLength({ max: maxUsernameLength }),
-  check('page').optional().isInt({ min: 1 }),
-  check('limit').optional().isInt({ min: 1, max: 100 }),
+    .notEmpty()
+    .withMessage('Username cannot be empty')
+    .isLength({ max: maxUsernameLength })
+    .withMessage(`Username must be less than ${maxUsernameLength} characters`),
+  check('page')
+    .optional()
+    .isInt({ min: 1 })
+    .withMessage('Invalid page number. Page number must be greater than 0'),
+  check('limit')
+    .optional()
+    .isInt({ min: 1, max: 100 })
+    .withMessage(`Invalid limit. Limit must be between 1 and 100`),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -80,10 +101,13 @@ export const validateSearchUser = [
 ];
 
 export const validateGetPins = [
-  check('user').isMongoId(),
-  check('user').custom((value, { req }) => {
-    return req.user?.id === value;
-  }),
+  check('user')
+    .isMongoId()
+    .withMessage('Invalid user id')
+    .custom((value, { req }) => {
+      return req.user?.id === value;
+    })
+    .withMessage('User can only get their own pinned conversations'),
 
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
@@ -94,8 +118,8 @@ export const validateGetPins = [
   },
 ];
 export const validatePutPins = [
-  check('conversationId').isString().isLength({ min: 24, max: 24 }),
-  check('pin').optional().isBoolean(),
+  check('conversationId').isMongoId().withMessage('Invalid conversation id'),
+  check('pin').optional().isBoolean().withMessage('Pin must be a boolean'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -106,7 +130,7 @@ export const validatePutPins = [
 ];
 
 export const validateGetUser = [
-  check('user').isString().isLength({ min: 24, max: 24 }),
+  check('user').isMongoId().withMessage('Invalid user id'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -117,10 +141,13 @@ export const validateGetUser = [
 ];
 
 export const validateDeleteUser = [
-  check('user').custom((value, { req }) => {
-    return req.user?.id === value;
-  }),
-  check('user').isString().isLength({ min: 24, max: 24 }),
+  check('user')
+    .isMongoId()
+    .withMessage('Invalid user id')
+    .custom((value, { req }) => {
+      return req.user?.id === value;
+    })
+    .withMessage('User can only delete themselves'),
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
@@ -133,20 +160,30 @@ export const validateDeleteUser = [
 export const validateSignUp = [
   check('username')
     .isString()
-    .isLength({ min: minUsernameLength, max: maxUsernameLength }),
-  check('email').optional().isEmail(),
-  check('password').custom((value) => {
-    if (!isStrongPassword(value)) {
-      throw new Error(
-        'Password is not strong enough. Passwords must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character'
-      );
-    }
-    return true;
-  }),
+    .withMessage('username must be a string')
+    .isLength({ min: minUsernameLength, max: maxUsernameLength })
+    .withMessage(
+      `Invalid username. Username must be between ${minUsernameLength} and ${maxUsernameLength} characters`
+    ),
+  check('email').optional().isEmail().withMessage('Invalid email'),
   check('password')
+    .isStrongPassword({
+      minLength: 8,
+      minLowercase: 1,
+      minUppercase: 1,
+      minNumbers: 1,
+      minSymbols: 1,
+    })
+    .withMessage(
+      'Password is not strong enough. Passwords must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+    ),
+
+  check('bio')
+    .optional()
     .isString()
-    .isLength({ min: minPasswordLength, max: maxPasswordLength }),
-  check('bio').optional().isString().isLength({ max: maxBioLength }),
+    .withMessage('Bio must be a string')
+    .isLength({ max: maxBioLength })
+    .withMessage(`Bio must be less than ${maxBioLength} characters`),
   check('confirmPassword').custom((value, { req }) => {
     if (value !== req.body.password) {
       throw new Error('Passwords do not match');
