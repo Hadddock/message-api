@@ -163,7 +163,7 @@ export const deleteLeaveConversation: RequestHandler = async (
     return res.status(200).json({ message: 'User left conversation' });
   }
 
-  if (conversation.users.length > 1 && conversation.admins.length == 0) {
+  if (conversation.users.length > 0 && conversation.admins.length == 0) {
     conversation.admins = [conversation.users[0]];
   }
 
@@ -282,7 +282,7 @@ export const postAddUsers: RequestHandler = async (req, res, next) => {
   }
 
   if (users.length + currentConversation.users.length > maxUsers) {
-    return res.status(400).json({ message: 'Too many users' });
+    return res.status(409).json({ message: 'Too many users' });
   }
 
   if (users.length < 1) {
