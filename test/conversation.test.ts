@@ -17,7 +17,13 @@ import {
 
 import { maxMessages } from '../src/controllers/conversationController';
 
-let agent = request.agent(app);
+import {
+  maxUsers,
+  minUsers,
+  minNameLength,
+  maxNameLength,
+} from '../src/interfaces/Conversation';
+
 import {
   userOneId,
   userTwoId,
@@ -32,13 +38,7 @@ import {
 
 let cookiesUserOne: any;
 let cookiesUserFour: any;
-
-import {
-  maxUsers,
-  minUsers,
-  minNameLength,
-  maxNameLength,
-} from '../src/interfaces/Conversation';
+let agent = request.agent(app);
 
 beforeAll(async () => {
   await connectDatabase();
