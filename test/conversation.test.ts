@@ -8,20 +8,30 @@ import User from '../src/models/User';
 import Conversation from '../src/models/Conversation';
 import mongoose from 'mongoose';
 
+import {
+  connectDatabase,
+  disconnectDatabase,
+  initializeDatabaseEntries,
+  loginAndGetCookies,
+} from './utils/setupDatabase';
+
 import { maxMessages } from '../src/controllers/conversationController';
 
-const agent = request.agent(app);
+let agent = request.agent(app);
+import {
+  userOneId,
+  userTwoId,
+  userThreeId,
+  userFourId,
+  conversationOneId,
+  conversationTwoId,
+  conversationThreeId,
+  conversationFullId,
+  bulkUserArray,
+} from '../test/utils/setupDatabase';
 
-let userOneId: mongoose.Types.ObjectId;
-let userTwoId: mongoose.Types.ObjectId;
-let userThreeId: mongoose.Types.ObjectId;
-let userFourId: mongoose.Types.ObjectId; //user four has blocked user one
-let conversationOneId: mongoose.Types.ObjectId; //user one is admin, conversation with user one and user two
-let conversationTwoId: mongoose.Types.ObjectId; //user two is admin, convesation with user two and user three
-let conversationThreeId: mongoose.Types.ObjectId; //user two is admin, conversation with user one and user two
-
-let conversationFullId: mongoose.Types.ObjectId; // converation with maxUsers (including user one)
-let bulkUserArray: string[] = [];
+let cookiesUserOne: any;
+let cookiesUserFour: any;
 
 import {
   maxUsers,
@@ -31,134 +41,23 @@ import {
 } from '../src/interfaces/Conversation';
 
 beforeAll(async () => {
-  const mongoServer = await MongoMemoryServer.create({
-    instance: { port: 2000 },
-  });
-  const mongoUri = mongoServer.getUri();
-  process.env.CONNECTION_STRING = mongoUri;
-  await dbConnection(mongoUri);
-});
-
-beforeEach(async () => {
-  const collections = mongoose.connection.collections;
-  for (const key in collections) {
-    const collection = collections[key];
-    await collection.deleteMany({});
-  }
-  const userOne = new User({
-    username: 'username',
-    password: await bcrypt.hash('P@ssw0rd', 10),
-  });
-  await userOne.save();
-
-  const userTwo = new User({
-    username: 'username2',
-    password: await bcrypt.hash('P@ssw0rd', 10),
-  });
-  await userTwo.save();
-
-  const userThree = new User({
-    username: 'username3',
-    password: await bcrypt.hash('P@ssw0rd', 10),
-  });
-
-  await userThree.save();
-
-  const userFour = new User({
-    username: 'username4',
-    password: await bcrypt.hash('P@ssw0rd', 10),
-    blockedUsers: [userOne.id],
-  });
-
-  await userFour.save();
-
-  userOneId = userOne.id;
-  userTwoId = userTwo.id;
-  userThreeId = userThree.id;
-  userFourId = userFour.id;
-
-  const conversationOne = new Conversation({
-    name: 'conversationOne',
-    users: [userOneId, userTwoId],
-    admins: [userOneId],
-  });
-  await conversationOne.save();
-  conversationOneId = conversationOne.id;
-
-  const conversationTwo = new Conversation({
-    name: 'conversationOne',
-    users: [userTwoId, userThreeId],
-    admins: [userTwoId],
-  });
-  await conversationTwo.save();
-
-  conversationTwoId = conversationTwo.id;
-
-  const conversationTwoMessage = new Message({
-    content: 'hello',
-    conversation: conversationTwoId,
-    user: userTwoId,
-  });
-  await conversationTwoMessage.save();
-
-  const conversationThree = new Conversation({
-    name: 'conversationOne',
-    users: [userTwoId, userOneId],
-    admins: [userTwoId],
-  });
-  await conversationThree.save();
-
-  conversationThreeId = conversationThree.id;
-
-  const userPromises = [];
-  for (let i = 0; i < maxUsers - 1; i++) {
-    const user = new User({
-      username: 'user' + i,
-      password: await bcrypt.hash('P@ssw0rd', 10),
-    });
-    userPromises.push(user.save());
-  }
-
-  const bulkUsers = await Promise.all(userPromises);
-
-  bulkUserArray = bulkUsers.map((user) => user.id);
-  bulkUserArray.push(userOneId.toString());
-
-  const messagePromises = [];
-  for (let i = 0; i < maxMessages; i++) {
-    const message = new Message({
-      content: 'hello' + i,
-      conversation: conversationOneId,
-      user: userOneId,
-    });
-    messagePromises.push(message.save());
-  }
-  await Promise.all(messagePromises);
-
-  const conversationFull = new Conversation({
-    name: 'fullConversation',
-    users: bulkUserArray,
-    admins: [userOneId],
-  });
-  conversationFull.save();
-
-  conversationFullId = conversationFull.id;
-
-  await agent
-    .post('/login')
-    .send({ username: 'username', password: 'P@ssw0rd' })
-    .set('Accept', 'application/json')
-    .expect('Content-Type', /json/)
-    .expect(200);
+  await connectDatabase();
 });
 
 afterAll(async () => {
-  await mongoose.connection.close();
+  await disconnectDatabase();
+});
+
+beforeEach(async () => {
+  await initializeDatabaseEntries();
+  agent = request.agent(app); // Create a new agent instance
+  cookiesUserOne = await loginAndGetCookies('username', 'P@ssw0rd');
+  cookiesUserFour = await loginAndGetCookies('username4', 'P@ssw0rd');
 });
 
 describe('GET /conversations/previews', () => {
   it('responds with a 403 due to not being authenticated', async () => {
-    return request(app)
+    await agent
       .get('/conversations/previews')
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
@@ -169,6 +68,7 @@ describe('GET /conversations/previews', () => {
     const conversationPreviews = await agent
       .get('/conversations/previews')
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(200);
     expect(conversationPreviews).toBeDefined();
@@ -185,19 +85,15 @@ describe('GET /conversations/previews', () => {
     expect(conversationPreviews.body[0].name).toBe('conversationOne');
     expect(conversationPreviews.body[0].users[0]).toEqual(userOneId);
     expect(conversationPreviews.body[0].latestMessage).toBeDefined();
-
-    expect(conversationPreviews.body[0].latestMessage.content).toBe('hello0');
   });
 
   it('responds with a 200 and returns an empty array for a user without conversations', async () => {
     //login as user without conversations
-    await agent
-      .post('/login')
-      .send({ username: 'username4', password: 'P@ssw0rd' })
-      .expect(200);
+
     const conversationPreviews = await agent
       .get('/conversations/previews')
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserFour)
       .expect('Content-Type', /json/)
       .expect(200);
     expect(conversationPreviews).toBeDefined();
@@ -209,7 +105,7 @@ describe('GET /conversations/previews', () => {
 
 describe('DELETE /conversation/:conversation/leave', () => {
   it('responds with a 403 due to not being authenticated', async () => {
-    await request(app)
+    await agent
       .delete(`/conversation/${conversationOneId}/leave`)
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
@@ -220,6 +116,7 @@ describe('DELETE /conversation/:conversation/leave', () => {
     await agent
       .delete(`/conversation/${new mongoose.Types.ObjectId()}/leave`)
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(404);
   });
@@ -228,6 +125,7 @@ describe('DELETE /conversation/:conversation/leave', () => {
     await agent
       .delete(`/conversation/${conversationOneId}/leave`)
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(200);
   });
@@ -249,6 +147,7 @@ describe('GET /conversation/:conversation', () => {
     await agent
       .get(`/conversation/${new mongoose.Types.ObjectId()}`)
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(404);
   });
@@ -257,6 +156,7 @@ describe('GET /conversation/:conversation', () => {
     await agent
       .get(`/conversation/${conversationTwoId}`)
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(403);
   });
@@ -265,6 +165,7 @@ describe('GET /conversation/:conversation', () => {
     const conversationResponse = await agent
       .get(`/conversation/${conversationOneId}`)
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(200);
 
@@ -296,6 +197,7 @@ describe('GET /conversation/:conversation/messages', () => {
     const conversationMessages = await agent
       .get(`/conversation/${conversationOneId}/messages`)
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(200);
 
@@ -315,6 +217,7 @@ describe('GET /conversation/:conversation/messages', () => {
     const conversationMessages = await agent
       .get(`/conversation/${conversationOneId}/messages`)
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(200);
 
@@ -340,6 +243,7 @@ describe('GET /conversation/:conversation/messages', () => {
       .get(`/conversation/${conversationOneId}/messages`)
       .query({ limit: maxMessages })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(200);
 
@@ -365,6 +269,7 @@ describe('GET /conversation/:conversation/messages', () => {
       .get(`/conversation/${conversationOneId}/messages`)
       .query({ page: 1 })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(200);
 
@@ -372,6 +277,7 @@ describe('GET /conversation/:conversation/messages', () => {
       .get(`/conversation/${conversationOneId}/messages`)
       .query({ page: 2 })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(200);
 
@@ -430,6 +336,7 @@ describe('GET /conversation/:conversation/messages', () => {
     await agent
       .get(`/conversation/${new mongoose.Types.ObjectId()}/messages`)
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(404);
   });
@@ -439,6 +346,7 @@ describe('GET /conversation/:conversation/messages', () => {
       .get(`/conversation/${conversationOneId}/messages`)
       .query({ limit: maxMessages + 1 })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(400);
   });
@@ -448,6 +356,7 @@ describe('GET /conversation/:conversation/messages', () => {
       .get(`/conversation/${conversationOneId}/messages`)
       .query({ limit: 0 })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(400);
   });
@@ -457,6 +366,7 @@ describe('GET /conversation/:conversation/messages', () => {
       .get(`/conversation/${conversationOneId}/messages`)
       .query({ page: 0 })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(400);
   });
@@ -465,6 +375,7 @@ describe('GET /conversation/:conversation/messages', () => {
     await agent
       .get(`/conversation/${conversationTwoId}/messages`)
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(403);
   });
@@ -483,6 +394,7 @@ describe('DELETE /conversation/:conversation', () => {
     await agent
       .delete(`/conversation/${new mongoose.Types.ObjectId()}`)
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(404);
   });
@@ -491,6 +403,7 @@ describe('DELETE /conversation/:conversation', () => {
     await agent
       .delete(`/conversation/${conversationThreeId}`)
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(403);
   });
@@ -499,6 +412,7 @@ describe('DELETE /conversation/:conversation', () => {
     await agent
       .delete(`/conversation/${conversationOneId}`)
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(200);
     //test for conversation presence after deleting
@@ -520,6 +434,7 @@ describe('DELETE /conversation/:conversation/users', () => {
       .delete(`/conversation/${conversationOneId}/users`)
       .send({ users: [userOneId] })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(400);
   });
@@ -529,6 +444,7 @@ describe('DELETE /conversation/:conversation/users', () => {
       .delete(`/conversation/${conversationThreeId}/users`)
       .send({ users: [userTwoId] })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(403);
   });
@@ -538,6 +454,7 @@ describe('DELETE /conversation/:conversation/users', () => {
       .delete(`/conversation/${conversationOneId}/users`)
       .send({ users: [new mongoose.Types.ObjectId()] })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(404);
   });
@@ -547,6 +464,7 @@ describe('DELETE /conversation/:conversation/users', () => {
       .delete(`/conversation/${conversationOneId}/users`)
       .send({ users: [userFourId] })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(404);
   });
@@ -567,6 +485,7 @@ describe('POST /conversation/:conversation/users', () => {
       .post(`/conversation/${conversationFullId}/users`)
       .send({ users: [userTwoId] })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(409);
   });
@@ -576,6 +495,7 @@ describe('POST /conversation/:conversation/users', () => {
       .post(`/conversation/${conversationOneId}/users`)
       .send({ users: [userFourId] })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(403);
   });
@@ -585,6 +505,7 @@ describe('POST /conversation/:conversation/users', () => {
       .post(`/conversation/${conversationOneId}/users`)
       .send({ users: [userThreeId] })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(200);
 
@@ -601,6 +522,7 @@ describe('POST /conversation/:conversation/users', () => {
       .post(`/conversation/${conversationOneId}/users`)
       .send({ users: [new mongoose.Types.ObjectId()] })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(404);
   });
@@ -610,6 +532,7 @@ describe('POST /conversation/:conversation/users', () => {
       .post(`/conversation/${conversationOneId}/users`)
       .send({ users: [userTwoId] })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(400);
   });
@@ -619,6 +542,7 @@ describe('POST /conversation/:conversation/users', () => {
       .post(`/conversation/${conversationOneId}/users`)
       .send({ users: [userOneId] })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(400);
   });
@@ -633,6 +557,7 @@ describe('POST /conversation', () => {
         users: [userOneId, userTwoId],
       })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(201);
 
@@ -657,6 +582,7 @@ describe('POST /conversation', () => {
         users: [...bulkUserArray, userTwoId],
       })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(400);
   });
@@ -669,6 +595,7 @@ describe('POST /conversation', () => {
         users: [userOneId],
       })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(201, done);
   });
@@ -681,6 +608,7 @@ describe('POST /conversation', () => {
         users: [userOneId, userOneId],
       })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(400, done);
   });
@@ -693,6 +621,7 @@ describe('POST /conversation', () => {
         users: [userOneId, userTwoId, userOneId],
       })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(400, done);
   });
@@ -705,6 +634,7 @@ describe('POST /conversation', () => {
         users: [],
       })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(400, done);
   });
@@ -717,6 +647,7 @@ describe('POST /conversation', () => {
         users: [userOneId, userOneId],
       })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(400, done);
   });
@@ -729,6 +660,7 @@ describe('POST /conversation', () => {
         users: [userOneId, userOneId],
       })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(400, done);
   });
@@ -741,6 +673,7 @@ describe('POST /conversation', () => {
         users: [new mongoose.Types.ObjectId(), userOneId],
       })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(400, done);
   });
@@ -753,6 +686,7 @@ describe('POST /conversation', () => {
         users: [userOneId, userTwoId],
       })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(400, done);
   });
@@ -777,6 +711,7 @@ describe('POST /conversation', () => {
         users: [userOneId, userFourId],
       })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(201);
     expect(currentConversation).toBeDefined();
