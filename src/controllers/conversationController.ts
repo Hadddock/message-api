@@ -269,7 +269,6 @@ export const postAddUsers: RequestHandler = async (req, res, next) => {
   });
 
   if (users.length === 0) {
-    console.log("No users to add that haven't blocked you");
     return res
       .status(403)
       .json({ message: 'No users to add that have not blocked you' });
