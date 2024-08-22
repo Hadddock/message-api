@@ -13,6 +13,7 @@ import { maxMessages } from '../../src/controllers/conversationController';
 export let userOneId: mongoose.Types.ObjectId;
 export let userTwoId: mongoose.Types.ObjectId;
 export let userThreeId: mongoose.Types.ObjectId;
+export let messageOneId: mongoose.Types.ObjectId;
 export let userFourId: mongoose.Types.ObjectId; //user four has blocked user one
 export let conversationOneId: mongoose.Types.ObjectId; //user one is admin, conversation with user one and user two
 export let conversationTwoId: mongoose.Types.ObjectId; //user two is admin, convesation with user two and user three
@@ -123,6 +124,15 @@ export const initializeDatabaseEntries = async () => {
 
   bulkUserArray = bulkUsers.map((user) => user.id);
   bulkUserArray.push(userOneId.toString());
+
+  const messageOne = new Message({
+    content: 'hello',
+    conversation: conversationOneId,
+    user: userOneId,
+  });
+
+  messageOne.save();
+  messageOneId = messageOne.id;
 
   const messagePromises = [];
   for (let i = 0; i < maxMessages; i++) {
