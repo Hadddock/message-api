@@ -7,6 +7,7 @@ import {
   minPasswordLength,
   maxPasswordLength,
 } from '../../interfaces/User';
+import mongoose from 'mongoose';
 
 export const validateGetBlockedUsers = [
   check('user')
@@ -118,8 +119,13 @@ export const validateGetPins = [
   },
 ];
 export const validatePutPins = [
-  check('conversationId').isMongoId().withMessage('Invalid conversation id'),
-  check('pin').optional().isBoolean().withMessage('Pin must be a boolean'),
+  check('pinnedConversations')
+    .isArray()
+    .custom((value: Array<string>) =>
+      value.every((id: string) => mongoose.Types.ObjectId.isValid(id))
+    )
+    .withMessage('conversation ids incorrectly formatted'),
+
   (req: Request, res: Response, next: NextFunction) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {

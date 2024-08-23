@@ -91,43 +91,39 @@ export const getPins: RequestHandler = async (req, res, next) => {
 };
 
 export const putPins: RequestHandler = async (req, res, next) => {
-  let { conversationId, pin } = req.body;
-  if (!conversationId) {
-    return res.status(400).json({ message: 'Conversation ID is required' });
+  const userId = req.params.user;
+
+  let { pinnedConversations } = req.body;
+
+  const conversations = await Conversation.find({
+    _id: { $in: pinnedConversations },
+  }).populate('users');
+
+  if (conversations.length !== pinnedConversations.length) {
+    return res
+      .status(404)
+      .json({ message: 'One or more conversations not found' });
   }
 
-  pin = typeof pin === 'undefined' ? true : pin;
-
-  const conversation = await Conversation.findById(conversationId).populate(
-    'users'
-  );
-  if (!conversation) {
-    return res.status(404).json({ message: 'Conversation not found' });
+  if (
+    conversations.some(
+      (c) => !c.users.map((u) => u.id.toString()).includes(userId)
+    )
+  ) {
+    return res
+      .status(403)
+      .json({ message: 'User is not a part of one or more conversations' });
   }
 
   const user = await User.findById(req.user?.id);
   if (!user) {
     return res.status(404).json({ message: 'User not found' });
   }
-
-  if (!conversation.users.some((u) => u.id === user.id)) {
-    return res
-      .status(403)
-      .json({ message: 'Users can only pin conversations they are a part of' });
-  }
-
-  if (pin) {
-    user.pinnedConversations.push(conversationId);
-  } else {
-    user.pinnedConversations = user.pinnedConversations.filter(
-      (id) => id != conversationId
-    );
-  }
+  user.pinnedConversations = pinnedConversations;
   user.save();
-  const foundUser = await User.findById(req.user?.id);
 
   return res.status(200).json({
-    message: 'Conversation pinned successfully',
+    message: 'Conversations pinned successfully',
     pinnedConversations: user.pinnedConversations,
   });
 };
