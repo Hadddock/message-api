@@ -259,6 +259,7 @@ export const logout: RequestHandler = async (req, res, next) => {
     if (err) {
       return next(err);
     }
+    res.clearCookie('connect.sid');
     res.status(200).send('logged out');
   });
 };
@@ -270,16 +271,13 @@ export const deleteUser: RequestHandler = async (req, res, next) => {
     });
   }
 
-  try {
-    const { id } = req.params;
+  const { id } = req.params;
 
-    await User.deleteOne({ _id: id });
-    logout(req, res, () =>
-      res.status(200).json({ message: 'User deleted successfully' })
-    );
-  } catch (error) {
-    next(error);
-  }
+  await User.deleteOne({ id: id });
+
+  res.clearCookie('connect.sid');
+  res.status(204);
+  res.send();
 };
 
 export const home: RequestHandler = async (req, res, next) => {

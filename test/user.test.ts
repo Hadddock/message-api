@@ -13,102 +13,96 @@ import {
   minUsernameLength,
 } from '../src/interfaces/User';
 
-const agent = request.agent(app);
-const b = 3;
-let userOneId: mongoose.Types.ObjectId;
-let userTwoId: mongoose.Types.ObjectId;
-let userThreeId: mongoose.Types.ObjectId;
+import { maxContentLength, maxImageUrlLength } from '../src/interfaces/Message';
+import {
+  connectDatabase,
+  disconnectDatabase,
+  initializeDatabaseEntries,
+  loginAndGetCookies,
+} from './utils/setupDatabase';
+
+import { maxMessages } from '../src/controllers/conversationController';
+
+import {
+  maxUsers,
+  minUsers,
+  minNameLength,
+  maxNameLength,
+} from '../src/interfaces/Conversation';
+
+import {
+  userOneId,
+  userTwoId,
+  userThreeId,
+  userFourId,
+  conversationOneId,
+  pinnedConversationId,
+  messageOneId,
+  conversationTwoId,
+  conversationThreeId,
+  conversationFullId,
+  bulkUserArray,
+} from '../test/utils/setupDatabase';
+
+let cookiesUserOne: any;
+let cookiesUserFour: any;
+let agent = request.agent(app);
 
 beforeAll(async () => {
-  const mongoServer = await MongoMemoryServer.create({
-    instance: { port: 2000 },
-  });
-  const mongoUri = mongoServer.getUri();
-  process.env.CONNECTION_STRING = mongoUri;
-  await dbConnection(mongoUri);
+  await connectDatabase();
+});
 
-  await agent
-    .post('/signup')
-    .send({
-      username: 'username',
-      password: 'P@ssw0rd',
-      confirmPassword: 'P@ssw0rd',
-      email: 'abcdefgh@gmail.com',
-    })
-    .expect(201);
+afterAll(async () => {
+  await disconnectDatabase();
+});
 
-  for (let i = 2; i <= 11; i++) {
-    await agent
-      .post('/signup')
-      .send({
-        username: 'username' + i,
-        password: 'P@ssw0rd',
-        confirmPassword: 'P@ssw0rd',
-      })
-      .expect(201);
-  }
-
-  const userOne = await User.findOne({ username: 'username' });
-  const userTwo = await User.findOne({ username: 'username2' });
-  const userThree = await User.findOne({ username: 'username3' });
-  if (userOne === null || userTwo === null || userThree === null)
-    throw new Error('Users not found');
-
-  userOneId = userOne._id;
-  userTwoId = userTwo._id;
-  userThreeId = userThree._id;
-
-  await agent
-    .post('/login')
-    .send({ username: 'username', password: 'P@ssw0rd' })
-    .set('Accept', 'application/json')
-    .expect('Content-Type', /json/)
-    .expect(200);
+beforeEach(async () => {
+  await initializeDatabaseEntries();
+  agent = request.agent(app); // Create a new agent instance
+  cookiesUserOne = await loginAndGetCookies('username', 'P@ssw0rd');
+  cookiesUserFour = await loginAndGetCookies('username4', 'P@ssw0rd');
 });
 
 describe('GET /users/:user/blocked-users', () => {
-  beforeAll(async () => {
-    await agent
-      .put(`/users/${userOneId}/block`)
-      .send({ blockedUserId: userTwoId });
-  });
+  //   beforeAll(async () => {
+  //     await agent
+  //       .put(`/users/${userOneId}/block`)
+  //       .send({ blockedUserId: userTwoId });
+  //   });
 
-  afterAll(async () => {
-    await agent
-      .put(`/users/${userOneId}/unblock`)
-      .send({ unblockedUserId: userTwoId });
-  });
+  //   afterAll(async () => {
+  //     await agent
+  //       .put(`/users/${userOneId}/unblock`)
+  //       .send({ unblockedUserId: userTwoId });
+  //   });
 
   it('responds with a 200 and blocked users', async () => {
     const response = await agent
-      .get(`/users/${userOneId}/blocked-users`)
+      .get(`/users/${userFourId}/blocked-users`)
+      .set('Cookie', cookiesUserFour)
       .expect(200);
     expect(response.body).toBeInstanceOf(Array);
     expect(response.body).toHaveLength(1);
-    expect(response.body[0].username).toBe('username2');
+    expect(response.body[0].username).toBe('username');
   });
 
   it('responds with a 400 due to authenticated user not matching user param', async () => {
     await agent
       .get(`/users/${new mongoose.Types.ObjectId()}/blocked-users`)
+      .set('Cookie', cookiesUserFour)
       .expect(400);
   });
 
-  it('responds with a 403 due to user not being logged in', (done) => {
-    request(app).get(`/users/${userOneId}/blocked-users`).expect(403, done);
+  it('responds with a 403 due to user not being authenticated', (done) => {
+    request(app).get(`/users/${userFourId}/blocked-users`).expect(403, done);
   });
 });
 
 describe('PUT /users/:user/block', () => {
-  afterEach(async () => {
-    await agent
-      .put(`/users/${userOneId}/unblock`)
-      .send({ blockedUserId: userTwoId });
-  });
-
   it('responds with a 200 and blocks a user', async () => {
     const response = await agent
       .put(`/users/${userOneId}/block`)
+      .set('Cookie', cookiesUserOne)
       .send({ blockedUserId: userTwoId })
       .expect(200);
 
@@ -118,20 +112,25 @@ describe('PUT /users/:user/block', () => {
   });
 
   it('responds with a 400 due to blockedUserId not being included', async () => {
-    await agent.put(`/users/${userOneId}/block`).expect(400);
+    await agent
+      .put(`/users/${userOneId}/block`)
+      .set('Cookie', cookiesUserOne)
+      .expect(400);
   });
 
   it('responds with a 400 due to current user id not matching path parameter', async () => {
     await agent
       .put(`/users/${userThreeId}/block`)
       .send({ blockedUserId: userTwoId })
+      .set('Cookie', cookiesUserOne)
       .expect(400);
   });
 
-  it('responds with a 400 due to current user trying to block block themselves', async () => {
+  it('responds with a 400 due to current user trying to block themselves', async () => {
     await agent
       .put(`/users/${userOneId}/block`)
       .send({ blockedUserId: userOneId })
+      .set('Cookie', cookiesUserOne)
       .expect(400);
   });
 
@@ -139,6 +138,7 @@ describe('PUT /users/:user/block', () => {
     await agent
       .put(`/users/${userOneId}/block`)
       .send({ blockedUserId: new mongoose.Types.ObjectId(), block: true })
+      .set('Cookie', cookiesUserOne)
       .expect(404);
   });
 
@@ -152,63 +152,66 @@ describe('PUT /users/:user/block', () => {
   it('responds with a 400 due to userId not being a string', async () => {
     await agent
       .put(`/users/${userOneId}/block`)
+      .set('Cookie', cookiesUserOne)
       .send({ blockedUserId: { userTwoId }, block: true })
       .expect(400);
   });
 });
 
 describe('PUT /users/:user/unblock', () => {
-  beforeEach(async () => {
-    await agent
-      .put(`/users/${userOneId}/block`)
-      .send({ blockedUserId: userTwoId });
-  });
-
   it('responds with a 200 and unblocks a user', async () => {
     const response = await agent
-      .put(`/users/${userOneId}/unblock`)
-      .send({ unblockedUserId: userTwoId })
+      .put(`/users/${userFourId}/unblock`)
+      .set('Cookie', cookiesUserFour)
+      .send({ unblockedUserId: userOneId })
       .expect(200);
 
     expect(response.body.blockedUsers).toHaveLength(0);
   });
 
   it('responds with a 400 due to unblockedUserId not being included', async () => {
-    await agent.put(`/users/${userOneId}/unblock`).expect(400);
+    await agent
+      .put(`/users/${userFourId}/unblock`)
+      .set('Cookie', cookiesUserFour)
+      .expect(400);
   });
 
   it('responds with a 400 due to current user id not matching path parameter', async () => {
     await agent
       .put(`/users/${userThreeId}/unblock`)
       .send({ unblockedUserId: userTwoId })
+      .set('Cookie', cookiesUserFour)
       .expect(400);
   });
 
   it('responds with a 400 due to current user trying to unblock themselves', async () => {
     await agent
-      .put(`/users/${userOneId}/unblock`)
-      .send({ unblockedUserId: userOneId })
+      .put(`/users/${userFourId}/unblock`)
+      .send({ unblockedUserId: userFourId })
+      .set('Cookie', cookiesUserFour)
       .expect(400);
   });
 
   it('responds with a 404 due to unblockedUser not being found', async () => {
     await agent
-      .put(`/users/${userOneId}/unblock`)
+      .put(`/users/${userFourId}/unblock`)
       .send({ unblockedUserId: new mongoose.Types.ObjectId() })
+      .set('Cookie', cookiesUserFour)
       .expect(404);
   });
 
-  it('responds with a 403 due to user not being logged in', async () => {
+  it('responds with a 403 due to user not being authenticated', async () => {
     await request(app)
-      .put(`/users/${userOneId}/unblock`)
-      .send({ unblockedUserId: userTwoId })
+      .put(`/users/${userFourId}/unblock`)
+      .send({ unblockedUserId: userOneId })
       .expect(403);
   });
 
   it('responds with a 400 due to unblockedUserId not being a string', async () => {
     await agent
-      .put(`/users/${userOneId}/unblock`)
-      .send({ unblockedUserId: { userTwoId } })
+      .put(`/users/${userFourId}/unblock`)
+      .set('Cookie', cookiesUserFour)
+      .send({ unblockedUserId: { userOneId } })
       .expect(400);
   });
 });
@@ -219,6 +222,7 @@ describe('GET /users', () => {
       .get('/users')
       .query({ username: 'username3' })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(200);
 
@@ -231,6 +235,7 @@ describe('GET /users', () => {
       .get('/users')
       .query({ username: 'uSeRnAme3' })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(200);
 
@@ -243,6 +248,7 @@ describe('GET /users', () => {
       .get('/users')
       .query({ username: 'nobodyHasThisUsername' })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(200);
     expect(users.body).toHaveLength(0);
@@ -253,6 +259,7 @@ describe('GET /users', () => {
       .get('/users')
       .query({ username: 'user' })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(200);
 
@@ -264,6 +271,7 @@ describe('GET /users', () => {
       .get('/users')
       .query({ username: 'user', limit: 1 })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(200);
 
@@ -271,6 +279,7 @@ describe('GET /users', () => {
       .get('/users')
       .query({ username: 'user', limit: 1, page: 2 })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(200);
 
@@ -287,6 +296,7 @@ describe('GET /users', () => {
       .get('/users')
       .query({ username: 'user', limit: 1 })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(200);
 
@@ -298,17 +308,19 @@ describe('GET /users', () => {
       .get('/users')
       .query({ username: 'user', page: 2 })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(200);
 
-    expect(users.body.length).toBe(1);
-    expect(users.body[0].username).toBe('username11');
+    expect(users.body.length).toBe(5);
+    expect(users.body[0].username).toBe('user6');
   });
 
   it('returns 400 due to limit being < 1', async () => {
     await agent
       .get('/users')
       .query({ username: 'user', limit: 0 })
+      .set('Cookie', cookiesUserOne)
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
       .expect(400);
@@ -318,6 +330,7 @@ describe('GET /users', () => {
     await agent
       .get('/users')
       .query({ username: 'user', limit: 0 })
+      .set('Cookie', cookiesUserOne)
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
       .expect(400);
@@ -327,6 +340,7 @@ describe('GET /users', () => {
     await agent
       .get('/users')
       .query({ username: 'user', page: 0 })
+      .set('Cookie', cookiesUserOne)
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
       .expect(400);
@@ -336,18 +350,19 @@ describe('GET /users', () => {
     await agent
       .get('/users')
       .query({ username: 'user', limit: 101 })
+      .set('Cookie', cookiesUserOne)
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
       .expect(400);
   });
 
-  it('responds with a 403 due to not being logged in', (done) => {
-    request(app)
+  it('responds with a 403 due to not being logged in', async () => {
+    await agent
       .get('/users')
       .query({ username: 'user' })
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
-      .expect(403, done);
+      .expect(403);
   });
 
   it('responds with a 400 due to username not being a string', (done) => {
@@ -355,6 +370,7 @@ describe('GET /users', () => {
       .get('/users')
       .query({ username: { user: 'user' } })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(400, done);
   });
@@ -364,6 +380,7 @@ describe('GET /users', () => {
       .get('/users')
       .query({ username: 'user', limit: 'ten' })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(400, done);
   });
@@ -373,6 +390,7 @@ describe('GET /users', () => {
       .get('/users')
       .query({ username: 'user', page: 'one' })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(400, done);
   });
@@ -382,6 +400,7 @@ describe('GET /users', () => {
       .get('/users')
       .query({ username: '' })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(400, done);
   });
@@ -391,174 +410,123 @@ describe('GET /users', () => {
       .get('/users')
       .query({ username: '  ' })
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(400, done);
   });
 });
 
 describe('PUT /users/:user/pins', () => {
-  let conversationId: mongoose.Types.ObjectId;
-
-  beforeAll(async () => {
-    //create a new conversation
-    const conversation = await agent
-      .post('/conversation')
-      .send({
-        name: 'new conversation',
-        users: [userOneId, userTwoId],
-      })
-      .set('Accept', 'application/json')
-      .expect('Content-Type', /json/)
-      .expect(201);
-    conversationId = conversation.body._id;
-  });
-
-  beforeEach(async () => {
-    await agent.get('/logout').expect(200, 'logged out');
-    await agent
-      .post('/login')
-      .send({ username: 'username', password: 'P@ssw0rd' })
-      .set('Accept', 'application/json')
-      .expect('Content-Type', /json/)
-      .expect(200);
-  });
-
-  afterEach(async () => {
-    await agent.get('/logout').expect(200, 'logged out');
-    await agent
-      .post('/login')
-      .send({ username: 'username', password: 'P@ssw0rd' })
-      .set('Accept', 'application/json')
-      .expect('Content-Type', /json/)
-      .expect(200);
-  });
-
-  it('responds with a 200 and pins then unpins a conversation', async () => {
+  it('responds with a 200 and pins all conversations', async () => {
     let response = await agent
       .put(`/users/${userOneId}/pins`)
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
-      .send({ conversationId: conversationId, pin: true })
+      .send({ pinnedConversations: [conversationOneId] })
       .expect(200);
-    expect(response.body.pinnedConversations).toEqual([conversationId]);
-
-    response = await agent
-      .put(`/users/${userOneId}/pins`)
-      .set('Accept', 'application/json')
-      .expect('Content-Type', /json/)
-      .send({ conversationId: conversationId, pin: false })
-      .expect(200);
-
-    expect(response.body.pinnedConversations).toEqual([]);
+    expect(response.body.pinnedConversations).toContain(conversationOneId);
   });
 
-  it('responds with a 400 due to conversationId not being included', async () => {
-    //create a new conversation
+  it('responds with a 200 and unpins all conversations', async () => {
+    let response = await agent
+      .put(`/users/${userOneId}/pins`)
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
+      .send({ pinnedConversations: [] })
+      .expect('Content-Type', /json/)
+      .expect(200);
+    expect(response.body.pinnedConversations).toHaveLength(0);
+  });
+
+  it('responds with a 400 due to pinnedConversations not being included', async () => {
     await agent
       .put(`/users/${userOneId}/pins`)
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
-
       .expect(400);
   });
 
-  it('responds with a 404 due to conversation not being found', async () => {
+  it('responds with a 404 due to pinned conversation not being found', async () => {
     //create a new conversation
     await agent
       .put(`/users/${userOneId}/pins`)
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
-      .send({ conversationId: new mongoose.Types.ObjectId() })
+      .send({ pinnedConversations: [new mongoose.Types.ObjectId()] })
       .expect(404);
   });
 
-  it('responds with a 404 due to user not being found', async () => {
+  it('responds with a 403 due to url param user not being the same as authenticated user', async () => {
     await agent
       .put(`/users/${new mongoose.Types.ObjectId()}/pins`)
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
-      .send({ conversationId: new mongoose.Types.ObjectId() })
-      .expect(404);
-  });
-
-  it('responds with a 403 due to user not being logged in', async () => {
-    //create a new conversation
-    await agent.get('/logout').expect(200, 'logged out');
-
-    await agent
-      .put(`/users/${userOneId}/pins`)
-      .set('Accept', 'application/json')
-      .expect('Content-Type', /json/)
-      .send({ conversationId: conversationId })
+      .send({ pinnedConversations: [conversationOneId] })
       .expect(403);
   });
 
-  it('responds with a 400 due to conversationId not being a string', async () => {
+  it('responds with a 403 due to user not being authenticated', async () => {
     await agent
       .put(`/users/${userOneId}/pins`)
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
-      .send({ conversationId: { conversationId } })
-      .expect(400);
+      .send({ pinnedConversations: [conversationOneId] })
+      .expect(403);
   });
 
-  it('responds with a 400 due to pin not being a boolean', async () => {
+  it('responds with a 400 due to conversationId not being an array', async () => {
     await agent
       .put(`/users/${userOneId}/pins`)
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
-      .send({ conversationId: conversationId, pin: { true: true } })
+      .send({ pinnedConversations: conversationOneId })
       .expect(400);
   });
 
   it('responds with a 403 due to user not being a part of the conversation', async () => {
-    //create a new conversation
-    const conversation = await agent
-      .post('/conversation')
-      .send({
-        name: 'new conversation',
-        users: [userOneId, userTwoId],
-      })
-      .set('Accept', 'application/json')
-      .expect('Content-Type', /json/)
-      .expect(201);
-    const conversationId = conversation.body._id;
-
-    //logout and login as user3
-    await agent.get('/logout').expect(200, 'logged out');
     await agent
-      .post('/login')
-      .send({ username: 'username3', password: 'P@ssw0rd' })
+      .put(`/users/${userFourId}/pins`)
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserFour)
       .expect('Content-Type', /json/)
-      .expect(200);
-    //attempt to pin conversation the user is not a part of
-    await agent
-      .put(`/users/${userThreeId}/pins`)
-      .set('Accept', 'application/json')
-      .expect('Content-Type', /json/)
-      .send({ conversationId: conversationId, pin: true })
+      .send({ pinnedConversations: [conversationOneId] })
       .expect(403);
   });
 });
 
 describe('GET /users/:user', () => {
   it('responds with a 200 and user', async () => {
-    const userInformation = await agent.get(`/users/${userTwoId}`).expect(200);
+    const userInformation = await agent
+      .get(`/users/${userTwoId}`)
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
+      .expect(200);
     expect(userInformation.body.username).toBe('username2');
   });
 
   it('responds with a 404 due to userId not corresponding to any user', async () => {
-    await agent.get(`/users/${new mongoose.Types.ObjectId()}`).expect(404);
+    await agent
+      .get(`/users/${new mongoose.Types.ObjectId()}`)
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
+      .expect(404);
   });
 
-  it('responds with a 403 due to not being logged in', (done) => {
-    request(app).get(`/users/${userTwoId}`).expect(403, done);
+  it('responds with a 403 due to not being logged in', async () => {
+    await agent
+      .get(`/users/${userTwoId}`)
+      .set('Accept', 'application/json')
+      .expect(403);
   });
 });
 
 describe('POST /signup', () => {
-  it('responds with a 201 and creates new user', (done) => {
+  it('responds with a 201 and creates a new user', (done) => {
     request(app)
       .post('/signup')
       .send({
@@ -757,57 +725,34 @@ describe('POST /signup', () => {
   });
 });
 
-describe('GET /home', () => {
-  it('responds with a json message about successful authentication status', (done) => {
-    agent
-      .get('/home')
-      .set('Accept', 'application/json')
-      .expect('Content-Type', /json/)
-      .expect(200, { message: 'You are authenticated' }, done);
-  });
-});
-
 describe('GET /logout', () => {
-  it('logs out user successfully', (done) => {
-    request(app).get('/logout').expect(200, 'logged out', done);
+  it('logs out user successfully', async () => {
+    await agent
+      .get('/logout')
+      .set('Cookie', cookiesUserOne)
+      .expect(200, 'logged out');
   });
 });
 
 describe('GET /users/:user/pins', () => {
-  let conversationId: mongoose.Types.ObjectId;
-  beforeAll(async () => {
-    //create a new conversation
-    const conversation = await agent
-      .post('/conversation')
-      .send({
-        name: 'new conversation',
-        users: [userOneId, userThreeId],
-      })
-      .set('Accept', 'application/json')
-      .expect('Content-Type', /json/)
-      .expect(201);
-    conversationId = conversation.body._id;
-
-    await agent
-      .put(`/users/${userOneId}/pins`)
-      .send({ conversationId, pin: true })
-      .expect(200);
-  });
-
   it("responds with a 200 and retrives the user's pinned conversations", async () => {
     const response = await agent
       .get(`/users/${userOneId}/pins`)
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(200);
 
     expect(response.body).toBeInstanceOf(Array);
+    expect(response.body).toHaveLength(1);
+    expect(response.body[0]._id).toBe(pinnedConversationId.toString());
   });
 
   it("responds with a 400 due to user attempting to retrive another user's pinnedConversations", async () => {
     const response = await agent
       .get(`/users/${userTwoId}/pins`)
       .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(400);
   });
@@ -860,13 +805,25 @@ describe('POST /login', () => {
 });
 
 describe('DELETE /users/:user', () => {
-  it('responds with a 400 due to attempting to delete the profile of another user', async () => {
-    await agent.delete(`/users/${userTwoId}`).expect(400);
+  it('responds with a 200 and deletes the user', async () => {
+    await agent
+      .delete(`/users/${userOneId}`)
+      .set('Cookie', cookiesUserOne)
+      .expect(204);
+    //Ensure user was deleted out and is no longer authenticated
+    await agent
+      .post('/login')
+      .send({
+        username: 'username',
+        password: 'P@ssw0rd',
+      })
+      .expect(401);
   });
 
-  it('responds with a 200 and deletes and logs out user', async () => {
-    await agent.delete(`/users/${userOneId}`).expect(200);
-    //Ensure user was logged out and no longer authenticated
-    await agent.delete(`/users/${userOneId}`).expect(403);
+  it('responds with a 400 due to attempting to delete the profile of another user', async () => {
+    await agent
+      .delete(`/users/${userTwoId}`)
+      .set('Cookie', cookiesUserOne)
+      .expect(400);
   });
 });
