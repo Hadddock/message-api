@@ -38,9 +38,24 @@ const messageSchema = new Schema<IMessage>({
     required: true,
   },
   user: { type: Schema.Types.ObjectId, ref: 'User', required: true },
-  postTime: { type: Date, required: true, default: Date.now() },
+  readBy: [
+    {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+      default: [],
+    },
+  ],
+  creationTime: { type: Date, required: true, default: Date.now() },
   editTime: { type: Date },
   deletedAt: { type: Date },
+});
+
+messageSchema.pre('save', function (next) {
+  if (!this.readBy.includes(this.user)) {
+    this.readBy.push(this.user);
+  }
+  next();
 });
 
 const Message = model<IMessage>('Message', messageSchema);

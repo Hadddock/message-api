@@ -4,10 +4,11 @@ export interface Message {
   id: string;
   content?: string;
   imageUrl?: string;
-  postTime: Date;
+  creationTime: Date;
   editTime?: Date;
   deletedAt?: Date;
   deleted: boolean;
+  readBy: User[];
   user: User;
   conversation: Conversation;
 }

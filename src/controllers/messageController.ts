@@ -57,6 +57,7 @@ export const postMessage: RequestHandler = async (req, res, next) => {
     user,
     content,
     imageUrl,
+    readBy: [user],
     conversation,
   });
   await message.save();

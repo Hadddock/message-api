@@ -37,6 +37,7 @@ import {
 } from '../test/utils/setupDatabase';
 
 let cookiesUserOne: any;
+let cookiesUserTwo: any;
 let cookiesUserFour: any;
 let agent = request.agent(app);
 
@@ -52,6 +53,7 @@ beforeEach(async () => {
   await initializeDatabaseEntries();
   agent = request.agent(app); // Create a new agent instance
   cookiesUserOne = await loginAndGetCookies('username', 'P@ssw0rd');
+  cookiesUserTwo = await loginAndGetCookies('username2', 'P@ssw0rd');
   cookiesUserFour = await loginAndGetCookies('username4', 'P@ssw0rd');
 });
 
@@ -72,12 +74,22 @@ describe('GET /conversations/previews', () => {
       .expect('Content-Type', /json/)
       .expect(200);
     expect(conversationPreviews).toBeDefined();
-
     expect(conversationPreviews.body).toBeDefined();
     expect(conversationPreviews.body).toBeInstanceOf(Array);
-
     expect(conversationPreviews.body[0]).toBeDefined();
     expect(conversationPreviews.body[0]).toHaveProperty('name');
+    expect(conversationPreviews.body[0]).toHaveProperty('newMessages');
+    expect(conversationPreviews.body[0].newMessages).toBeDefined();
+    expect(conversationPreviews.body[0].newMessages).toBeInstanceOf(Array);
+    expect(conversationPreviews.body[0].newMessages.length).toBe(2);
+    expect(conversationPreviews.body[0].newMessages[0].content).toBe(
+      'hello this is a slightly newer message'
+    );
+    expect(conversationPreviews.body[0].newMessages[1].content).toBe(
+      'hello this is a new message'
+    );
+    expect(conversationPreviews.body[0]).toHaveProperty('latestMessage');
+    expect(conversationPreviews.body[0]).toHaveProperty('latestMessage');
     expect(conversationPreviews.body[0]).toHaveProperty('latestMessage');
     expect(conversationPreviews.body[0]).toHaveProperty('creationTime');
     expect(conversationPreviews.body[0]).toHaveProperty('users');

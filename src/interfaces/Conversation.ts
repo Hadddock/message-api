@@ -7,7 +7,7 @@ export interface Conversation {
   admins: Array<User>;
   users: Array<User>;
   creationTime: Date;
-  getPreview(): Promise<Preview>;
+  getPreview(userId: string): Promise<Preview>;
 }
 
 export interface Preview {

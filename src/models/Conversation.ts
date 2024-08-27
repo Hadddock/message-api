@@ -38,15 +38,23 @@ const conversationSchema = new Schema<IConversation>({
   creationTime: { type: Date, required: true, default: Date.now() },
 });
 
-conversationSchema.methods.getPreview = async function () {
+conversationSchema.methods.getPreview = async function (userId: string) {
   let latestMessage = await model('Message')
     .findOne({ conversation: this._id })
+    .sort({ creationTime: -1 });
+
+  let newMessages = await model('Message')
+    .find({
+      conversation: this._id,
+      readBy: { $ne: userId },
+    })
     .sort({ creationTime: -1 });
 
   return {
     id: this.id,
     name: this.name,
     users: this.users,
+    newMessages: newMessages,
     creationTime: this.creationTime,
     latestMessage: latestMessage,
   };

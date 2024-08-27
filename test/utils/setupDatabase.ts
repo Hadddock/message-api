@@ -88,6 +88,22 @@ export const initializeDatabaseEntries = async () => {
   await conversationOne.save();
   conversationOneId = conversationOne.id;
 
+  const conversationOneNewMessage = new Message({
+    content: 'hello this is a new message',
+    conversation: conversationOneId,
+    user: userTwoId,
+    creationTime: new Date(Date.now() - 5000),
+  });
+  await conversationOneNewMessage.save();
+
+  const conversationOneNewMessageTwo = new Message({
+    content: 'hello this is a slightly newer message',
+    conversation: conversationOneId,
+    creationTime: new Date(Date.now() + 5000),
+    user: userTwoId,
+  });
+  await conversationOneNewMessageTwo.save();
+
   const conversationTwo = new Conversation({
     name: 'conversationOne',
     users: [userTwoId, userThreeId],

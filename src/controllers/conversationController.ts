@@ -130,7 +130,9 @@ export const getPreviews: RequestHandler = async (req, res, next) => {
     users: user._id,
   });
 
-  const previews = await Promise.all(conversations.map((c) => c.getPreview()));
+  const previews = await Promise.all(
+    conversations.map((c) => c.getPreview(req.user?.id ?? ''))
+  );
 
   return res.status(200).json(previews);
 };
