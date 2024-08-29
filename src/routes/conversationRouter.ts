@@ -8,6 +8,7 @@ import {
   getConversationMessages,
   deleteConversation,
   getConversation,
+  postReadConversation,
 } from '../controllers/conversationController';
 import asyncHandler from 'express-async-handler';
 import { checkAuthentication } from '../middleware/authentication';
@@ -19,6 +20,7 @@ import {
   validateGetConversationMessages,
   validateDeleteConversation,
   validateGetConversation,
+  validatePostReadConversation,
 } from '../middleware/validators/conversationValidator';
 
 const router = express.Router();
@@ -77,4 +79,12 @@ router.get(
   checkAuthentication,
   asyncHandler(getPreviews)
 );
+
+router.post(
+  '/conversation/:conversation/read',
+  checkAuthentication,
+  validatePostReadConversation,
+  asyncHandler(postReadConversation)
+);
+
 export default router;

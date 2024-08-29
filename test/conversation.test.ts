@@ -737,3 +737,59 @@ describe('POST /conversation', () => {
     expect(currentConversation.body.users.length).toBe(1);
   });
 });
+
+describe.only('POST /conversation/:conversation/read', () => {
+  it('responds with a 403 due to not being authenticated', async () => {
+    await agent
+      .post(`/conversation/${conversationOneId}/read`)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(403);
+  });
+
+  it('responds with a 404 due to having a conversationId that does not correspond to an actual conversation', async () => {
+    await agent
+      .post(`/conversation/${new mongoose.Types.ObjectId()}/read`)
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
+      .expect('Content-Type', /json/)
+      .expect(404);
+  });
+
+  it('responds with a 200 and marks the conversation messages as read', async () => {
+    await Message.find({ conversation: conversationOneId }).then((messages) => {
+      expect(
+        messages.every((message) =>
+          message.readBy
+            .map((user) => user.toString())
+            .includes(userOneId.toString())
+        )
+      ).toBe(false);
+    });
+
+    await agent
+      .post(`/conversation/${conversationOneId}/read`)
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
+      .expect('Content-Type', /json/)
+      .expect(200);
+    await Message.find({ conversation: conversationOneId }).then((messages) => {
+      expect(
+        messages.every((message) =>
+          message.readBy
+            .map((user) => user.toString())
+            .includes(userOneId.toString())
+        )
+      ).toBe(true);
+    });
+  });
+
+  it('responds with a 403 due to user not being a part of the conversation', async () => {
+    await agent
+      .post(`/conversation/${conversationTwoId}/read`)
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
+      .expect('Content-Type', /json/)
+      .expect(403);
+  });
+});

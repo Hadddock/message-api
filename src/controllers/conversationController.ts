@@ -295,3 +295,33 @@ export const postAddUsers: RequestHandler = async (req, res, next) => {
   await currentConversation.save();
   return res.status(200).json(currentConversation);
 };
+
+export const postReadConversation: RequestHandler = async (req, res, next) => {
+  const conversation = req.params.conversation;
+  const user = req.user?.id;
+
+  const currentConversation = await Conversation.findById(
+    conversation
+  ).populate('users');
+
+  if (!currentConversation) {
+    return res.status(404).json({ message: 'Conversation not found' });
+  }
+  if (!user) {
+    return res.status(400).json({ message: 'Invalid user' });
+  }
+
+  const conversationUsers = currentConversation.users.map((u) => u.id);
+
+  if (!conversationUsers.includes(user)) {
+    return res.status(403).json({
+      message: 'Only users in a conversation can mark it as read',
+    });
+  }
+
+  await Message.updateMany(
+    { conversation: conversation, readBy: { $ne: user } },
+    { $push: { readBy: user } }
+  );
+  res.status(200).json({ message: 'Messages read' });
+};
