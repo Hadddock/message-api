@@ -704,7 +704,7 @@ describe('POST /conversation', () => {
   });
 
   it('responds with a 403 due to not being authenticated', async () => {
-    return request(app)
+    agent
       .post('/conversation')
       .send({
         name: 'conversation',
