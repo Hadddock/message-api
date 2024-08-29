@@ -715,7 +715,7 @@ describe('POST /conversation', () => {
       .expect(403);
   });
 
-  it('responds with a 201 with only the current user due to attempting to create a conversation with  only users who have blocked the current user', async () => {
+  it('responds with a 201 with only the current user due to attempting to create a conversation with  only users who have blocked the current user, creating a conversation solely with the current user', async () => {
     const currentConversation = await agent
       .post('/conversation')
       .send({
