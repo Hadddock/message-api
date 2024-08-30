@@ -75,9 +75,9 @@ export const getConversationMessages: RequestHandler = async (
 };
 
 export const deleteConversation: RequestHandler = async (req, res, next) => {
-  let conversation = await Conversation.findById(
-    req.params.conversation
-  ).populate('admins');
+  let conversation = await Conversation.findById(req.params.conversation)
+    .populate('admins')
+    .populate('users');
   if (!conversation) {
     return res.status(404).json({ message: 'Conversation not found' });
   }
@@ -92,6 +92,12 @@ export const deleteConversation: RequestHandler = async (req, res, next) => {
 
   await conversation.deleteOne({ _id: conversation._id });
   await Message.deleteMany({ conversation: conversation._id });
+  conversation.users.forEach(async (user: any) => {
+    user.pinnedConversations = user.pinnedConversations.filter(
+      (c: any) => c.id !== conversation.id
+    );
+    await user.save();
+  });
 
   return res.status(200).json({ message: 'Conversation deleted' });
 };
@@ -151,6 +157,10 @@ export const deleteLeaveConversation: RequestHandler = async (
   }
 
   const userId = req.user?.id;
+  const user = await User.findById(userId).populate('pinnedConversations');
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
   const conversationUserCount = conversation.users.length;
   conversation.users = conversation.users.filter((u) => u.id !== userId);
   conversation.admins = conversation.admins.filter((a) => a.id !== userId);
@@ -170,6 +180,8 @@ export const deleteLeaveConversation: RequestHandler = async (
   }
 
   await conversation.save();
+  user.pinnedConversations.filter((c) => c.id !== conversation.id);
+  await user.save();
   return res.status(200).json({ message: 'User left conversation' });
 };
 
@@ -188,6 +200,10 @@ export const deleteUsersFromConversation: RequestHandler = async (
   if (!conversation) {
     return res.status(404).json({ message: 'Conversation not found' });
   }
+
+  const currentUsersToRemove = await User.find({
+    _id: { $in: usersToRemove },
+  }).populate('pinnedConversations');
 
   const adminIds = conversation.admins.map((a) => a.id);
 
@@ -218,6 +234,14 @@ export const deleteUsersFromConversation: RequestHandler = async (
   conversation.admins = conversation.admins.filter(
     (user) => !usersToRemove.includes(user.id.toString())
   );
+
+  currentUsersToRemove.forEach(async (removedUser) => {
+    removedUser.pinnedConversations = removedUser.pinnedConversations.filter(
+      (c) => c.id !== conversation.id
+    );
+
+    await removedUser.save();
+  });
 
   await conversation.save();
 

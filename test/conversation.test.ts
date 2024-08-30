@@ -142,6 +142,24 @@ describe('DELETE /conversation/:conversation/leave', () => {
       .expect(200);
   });
 
+  it('responds with a 200 and successfully leaves the conversation and removes the conversation from pinned conversations', async () => {
+    const userOne = await User.findById(userOneId).populate(
+      'pinnedConversations'
+    );
+    expect(
+      userOne?.pinnedConversations.map((conversation) => conversation.id)
+    ).toContain(conversationOneId);
+
+    await agent
+      .delete(`/conversation/${conversationOneId}/leave`)
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    expect(userOne?.pinnedConversations).not.toContain(conversationOneId);
+  });
+
   //test for admin promotion on leaving
   //test for last user leaving deleting conversation
 });
@@ -427,13 +445,67 @@ describe('DELETE /conversation/:conversation', () => {
       .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(200);
+
+    const conversationOne = await Conversation.findById(conversationOneId);
+    expect(conversationOne).toBeNull();
+    //test for conversation presence after deleting
+  });
+
+  it('responds with a 200 and successfully deletes the conversation and removes the pinned conversation from the user', async () => {
+    const userOne = await User.findById(userOneId).populate(
+      'pinnedConversations'
+    );
+    expect(
+      userOne?.pinnedConversations.map((conversation) => conversation.id)
+    ).toContain(conversationOneId);
+
+    await agent
+      .delete(`/conversation/${conversationOneId}`)
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    expect(userOne?.pinnedConversations).not.toContain(conversationOneId);
     //test for conversation presence after deleting
   });
 });
 
 describe('DELETE /conversation/:conversation/users', () => {
-  it('responds with a 403 due to not being authenticated', async () => {
+  it('responds with a 200 and deletes the users from the conversation', async () => {
     await request(app)
+      .delete(`/conversation/${conversationOneId}/users`)
+      .send({ users: [userTwoId] })
+      .set('Cookie', cookiesUserOne)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+  });
+
+  it('responds with a 200 and deletes the users from the conversation and removes the conversation from the removed users pinned conversations', async () => {
+    let userTwo = await User.findById(userTwoId).populate(
+      'pinnedConversations'
+    );
+    expect(
+      userTwo?.pinnedConversations.map((conversation) => conversation.id)
+    ).toContain(conversationOneId);
+
+    await agent
+      .delete(`/conversation/${conversationOneId}/users`)
+      .send({ users: [userTwoId] })
+      .set('Cookie', cookiesUserOne)
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    userTwo = await User.findById(userTwoId).populate('pinnedConversations');
+    expect(
+      userTwo?.pinnedConversations.map((conversation) => conversation.id)
+    ).not.toContain(conversationOneId);
+  });
+
+  it('responds with a 403 due to not being authenticated', async () => {
+    await agent
       .delete(`/conversation/${conversationOneId}/users`)
       .send({ users: [userThreeId] })
       .set('Accept', 'application/json')

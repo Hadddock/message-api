@@ -10,8 +10,8 @@ import bcrypt from 'bcrypt';
 import { maxUsers } from '../../src/interfaces/Conversation';
 import { maxMessages } from '../../src/controllers/conversationController';
 
-export let userOneId: mongoose.Types.ObjectId;
-export let userTwoId: mongoose.Types.ObjectId;
+export let userOneId: mongoose.Types.ObjectId; //has pinned conversation one
+export let userTwoId: mongoose.Types.ObjectId; //has pinned conversation one
 export let userThreeId: mongoose.Types.ObjectId;
 export let messageOneId: mongoose.Types.ObjectId;
 export let userFourId: mongoose.Types.ObjectId; //user four has blocked user one
@@ -87,6 +87,11 @@ export const initializeDatabaseEntries = async () => {
   });
   await conversationOne.save();
   conversationOneId = conversationOne.id;
+
+  userOne.pinnedConversations.push(conversationOne.id);
+  userTwo.pinnedConversations.push(conversationOne.id);
+  userOne.save();
+  userTwo.save();
 
   const conversationOneNewMessage = new Message({
     content: 'hello this is a new message',
