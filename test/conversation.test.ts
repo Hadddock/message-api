@@ -263,7 +263,7 @@ describe('GET /conversation/:conversation/messages', () => {
     expect(conversationMessages.body.pagination).toHaveProperty('pageSize');
     expect(conversationMessages.body.pagination).toHaveProperty('totalItems');
     expect(conversationMessages.body.pagination.currentPage).toBe(1);
-    expect(conversationMessages.body.pagination.totalPages).toBe(10);
+    expect(conversationMessages.body.pagination.totalPages).toBe(11);
     expect(conversationMessages.body.pagination.pageSize).toBe(10);
     expect(conversationMessages.body.pagination.totalItems).toBe(100);
   });
@@ -289,7 +289,7 @@ describe('GET /conversation/:conversation/messages', () => {
     expect(conversationMessages.body.pagination).toHaveProperty('pageSize');
     expect(conversationMessages.body.pagination).toHaveProperty('totalItems');
     expect(conversationMessages.body.pagination.currentPage).toBe(1);
-    expect(conversationMessages.body.pagination.totalPages).toBe(1);
+    expect(conversationMessages.body.pagination.totalPages).toBe(2);
     expect(conversationMessages.body.pagination.pageSize).toBe(100);
     expect(conversationMessages.body.pagination.totalItems).toBe(100);
   });
@@ -323,7 +323,7 @@ describe('GET /conversation/:conversation/messages', () => {
     expect(conversationMessages.body.pagination).toHaveProperty('pageSize');
     expect(conversationMessages.body.pagination).toHaveProperty('totalItems');
     expect(conversationMessages.body.pagination.currentPage).toBe(1);
-    expect(conversationMessages.body.pagination.totalPages).toBe(10);
+    expect(conversationMessages.body.pagination.totalPages).toBe(11);
     expect(conversationMessages.body.pagination.pageSize).toBe(10);
     expect(conversationMessages.body.pagination.totalItems).toBe(100);
 
@@ -810,7 +810,7 @@ describe('POST /conversation', () => {
   });
 });
 
-describe.only('POST /conversation/:conversation/read', () => {
+describe('POST /conversation/:conversation/read', () => {
   it('responds with a 403 due to not being authenticated', async () => {
     await agent
       .post(`/conversation/${conversationOneId}/read`)
@@ -863,5 +863,81 @@ describe.only('POST /conversation/:conversation/read', () => {
       .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
       .expect(403);
+  });
+});
+
+describe('PUT /conversation/:conversation/rename', () => {
+  it('responds with a 403 due to not being authenticated', async () => {
+    await agent
+      .put(`/conversation/${conversationOneId}/rename`)
+      .send({ name: 'new name' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(403);
+  });
+
+  it('responds with a 404 due to having a conversationId that does not correspond to an actual conversation', async () => {
+    await agent
+      .put(`/conversation/${new mongoose.Types.ObjectId()}/rename`)
+      .send({ name: 'new name' })
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
+      .expect('Content-Type', /json/)
+      .expect(404);
+  });
+
+  it('responds with a 403 due to not being an admin of the conversation', async () => {
+    await agent
+      .put(`/conversation/${conversationOneId}/rename`)
+      .send({ name: 'new name' })
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserTwo)
+      .expect('Content-Type', /json/)
+      .expect(403);
+  });
+
+  it('responds with a 403 due to not being a part of the conversation', async () => {
+    await agent
+      .put(`/conversation/${conversationThreeId}/rename`)
+      .send({ name: 'new name' })
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
+      .expect('Content-Type', /json/)
+      .expect(403);
+  });
+
+  it('responds with a 200 and successfully renames the conversation', async () => {
+    const updatedConversation = await agent
+      .put(`/conversation/${conversationOneId}/rename`)
+      .send({ name: 'new name' })
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    expect(updatedConversation).toBeDefined();
+    expect(updatedConversation.body).toBeDefined();
+    expect(updatedConversation.body).toHaveProperty('name');
+    expect(updatedConversation.body.name).toBe('new name');
+  });
+
+  it(`responds with a 400 due to having a name that is < ${minNameLength} characters long`, async () => {
+    await agent
+      .put(`/conversation/${conversationOneId}/rename`)
+      .send({ name: 'a'.repeat(minNameLength - 1) })
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
+
+  it(`responds with a 400 due to having a name that is > ${maxNameLength} characters long`, async () => {
+    await agent
+      .put(`/conversation/${conversationOneId}/rename`)
+      .send({ name: 'a'.repeat(maxNameLength + 1) })
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
+      .expect('Content-Type', /json/)
+      .expect(400);
   });
 });

@@ -9,6 +9,7 @@ import {
   deleteConversation,
   getConversation,
   postReadConversation,
+  putRenameConversation,
 } from '../controllers/conversationController';
 import asyncHandler from 'express-async-handler';
 import { checkAuthentication } from '../middleware/authentication';
@@ -20,6 +21,7 @@ import {
   validateGetConversationMessages,
   validateDeleteConversation,
   validateGetConversation,
+  validatePutRenameConversation,
   validatePostReadConversation,
 } from '../middleware/validators/conversationValidator';
 
@@ -30,6 +32,13 @@ router.post(
   checkAuthentication,
   validateAddUsers,
   asyncHandler(postAddUsers)
+);
+
+router.put(
+  '/conversation/:conversation/rename',
+  checkAuthentication,
+  validatePutRenameConversation,
+  asyncHandler(putRenameConversation)
 );
 
 router.get(

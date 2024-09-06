@@ -181,3 +181,22 @@ export const validatePostReadConversation = [
     next();
   },
 ];
+
+export const validatePutRenameConversation = [
+  check('conversation').isMongoId().withMessage('Invalid conversation id'),
+  check('name')
+    .isString()
+    .trim()
+    .notEmpty()
+    .isLength({ max: maxNameLength, min: minNameLength })
+    .withMessage(
+      `name must be between ${minNameLength} and ${maxNameLength} characters`
+    ),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  },
+];

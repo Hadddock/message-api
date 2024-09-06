@@ -248,6 +248,33 @@ export const deleteUsersFromConversation: RequestHandler = async (
   return res.status(200).json(conversation);
 };
 
+export const putRenameConversation: RequestHandler = async (req, res, next) => {
+  const { name } = req.body;
+  const conversation = await Conversation.findById(
+    req.params.conversation
+  ).populate('admins');
+
+  if (!conversation) {
+    return res.status(404).json({ message: 'Conversation not found' });
+  }
+
+  const adminIds = conversation.admins.map((a) => a.id);
+
+  if (!req.user?.id) {
+    return res.status(401).json({ message: 'Unauthorized' });
+  }
+
+  if (!adminIds.includes(req.user?.id)) {
+    return res
+      .status(403)
+      .json({ message: 'Only admins can edit a conversation' });
+  }
+
+  conversation.name = name;
+  await conversation.save();
+  return res.status(200).json(conversation);
+};
+
 export const postAddUsers: RequestHandler = async (req, res, next) => {
   let { users } = req.body;
   const { conversation } = req.params;
