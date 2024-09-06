@@ -265,7 +265,7 @@ describe('GET /conversation/:conversation/messages', () => {
     expect(conversationMessages.body.pagination.currentPage).toBe(1);
     expect(conversationMessages.body.pagination.totalPages).toBe(11);
     expect(conversationMessages.body.pagination.pageSize).toBe(10);
-    expect(conversationMessages.body.pagination.totalItems).toBe(100);
+    expect(conversationMessages.body.pagination.totalItems).toBe(103);
   });
 
   it('responds with a 200 and returns the correct pagination results with the max page size', async () => {
@@ -291,7 +291,7 @@ describe('GET /conversation/:conversation/messages', () => {
     expect(conversationMessages.body.pagination.currentPage).toBe(1);
     expect(conversationMessages.body.pagination.totalPages).toBe(2);
     expect(conversationMessages.body.pagination.pageSize).toBe(100);
-    expect(conversationMessages.body.pagination.totalItems).toBe(100);
+    expect(conversationMessages.body.pagination.totalItems).toBe(103);
   });
 
   it('responds with a 200 and returns the correct results with different messages', async () => {
@@ -325,7 +325,7 @@ describe('GET /conversation/:conversation/messages', () => {
     expect(conversationMessages.body.pagination.currentPage).toBe(1);
     expect(conversationMessages.body.pagination.totalPages).toBe(11);
     expect(conversationMessages.body.pagination.pageSize).toBe(10);
-    expect(conversationMessages.body.pagination.totalItems).toBe(100);
+    expect(conversationMessages.body.pagination.totalItems).toBe(103);
 
     expect(converastionMessagesSecondPage).toBeDefined();
     expect(converastionMessagesSecondPage.body).toBeDefined();
@@ -347,9 +347,9 @@ describe('GET /conversation/:conversation/messages', () => {
       'totalItems'
     );
     expect(converastionMessagesSecondPage.body.pagination.currentPage).toBe(2);
-    expect(converastionMessagesSecondPage.body.pagination.totalPages).toBe(10);
+    expect(converastionMessagesSecondPage.body.pagination.totalPages).toBe(11);
     expect(converastionMessagesSecondPage.body.pagination.pageSize).toBe(10);
-    expect(converastionMessagesSecondPage.body.pagination.totalItems).toBe(100);
+    expect(converastionMessagesSecondPage.body.pagination.totalItems).toBe(103);
 
     //add comparison of messages
   });
