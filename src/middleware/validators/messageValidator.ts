@@ -19,6 +19,40 @@ export const validateDeleteMessage = [
     next();
   },
 ];
+
+export const validatePutMessage = [
+  check('content')
+    .isString()
+    .withMessage('content must be a string')
+    .notEmpty()
+    .withMessage('content cannot be empty')
+    .custom((value) => {
+      return value.trim() !== '';
+    })
+    .isLength({ min: minContentLength, max: maxContentLength })
+    .withMessage(
+      `Content must be between ${minContentLength} and ${maxContentLength} characters`
+    ),
+
+  check('conversation').isMongoId().withMessage('Invalid conversation id'),
+  check('message').isMongoId().withMessage('Invalid message id'),
+
+  (req: Request, res: Response, next: NextFunction) => {
+    if (req.body.content === undefined && req.body.imageUrl === undefined) {
+      return res.status(400).json({
+        errors: [
+          'Invalid message. Messages must contain content or an image URL',
+        ],
+      });
+    }
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  },
+];
+
 export const validatePostMessage = [
   check('content')
     .optional()

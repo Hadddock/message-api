@@ -1,10 +1,15 @@
 import express from 'express';
-import { postMessage, deleteMessage } from '../controllers/messageController';
+import {
+  postMessage,
+  deleteMessage,
+  putMessage,
+} from '../controllers/messageController';
 import asyncHandler from 'express-async-handler';
 import { checkAuthentication } from '../middleware/authentication';
 import {
   validateDeleteMessage,
   validatePostMessage,
+  validatePutMessage,
 } from '../middleware/validators/messageValidator';
 
 const router = express.Router();
@@ -21,4 +26,12 @@ router.post(
   validatePostMessage,
   asyncHandler(postMessage)
 );
+
+router.put(
+  '/conversation/:conversation/message/:message',
+  checkAuthentication,
+  validatePutMessage,
+  asyncHandler(putMessage)
+);
+
 export default router;

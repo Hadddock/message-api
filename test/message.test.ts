@@ -4,6 +4,7 @@ import app from './__mocks__/mockApp';
 import dbConnection from './__mocks__/mockDatabase';
 import User from '../src/models/User';
 import mongoose from 'mongoose';
+import Message from '../src/models/Message';
 
 import { maxContentLength, maxImageUrlLength } from '../src/interfaces/Message';
 import {
@@ -36,6 +37,7 @@ import {
 } from '../test/utils/setupDatabase';
 
 let cookiesUserOne: any;
+let cookiesUserTwo: any;
 let cookiesUserFour: any;
 let agent = request.agent(app);
 
@@ -51,6 +53,7 @@ beforeEach(async () => {
   await initializeDatabaseEntries();
   agent = request.agent(app); // Create a new agent instance
   cookiesUserOne = await loginAndGetCookies('username', 'P@ssw0rd');
+  cookiesUserTwo = await loginAndGetCookies('username2', 'P@ssw0rd');
   cookiesUserFour = await loginAndGetCookies('username4', 'P@ssw0rd');
 });
 
@@ -98,7 +101,110 @@ describe('DELETE /conversation/:conversation/message/:message', () => {
   });
 });
 
-describe('POST /conversation', () => {
+describe('PUT /conversation/:conversation/message/:message', () => {
+  it('responds with a 403 due to not being logged in', async () => {
+    await agent
+      .put(`/conversation/${conversationOneId}/message/${messageOneId}`)
+      .send({ content: 'Hello' })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(403);
+  });
+
+  it('responds with a 200 and updates the message', async () => {
+    const oldMessage = await Message.findOne({ _id: messageOneId });
+    await agent
+      .put(`/conversation/${conversationOneId}/message/${messageOneId}`)
+      .send({ content: 'Hello' })
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
+      .expect('Content-Type', /json/)
+      .expect(200);
+
+    const message = await Message.findOne({ _id: messageOneId });
+    expect(message?.content).not.toBe(oldMessage?.content);
+    expect(message?.content).toBe('Hello');
+    expect(message?.editTime).not.toBe(oldMessage?.editTime);
+  });
+
+  it('responds with a 400 due to not being the creator of the message', async () => {
+    await agent
+      .put(`/conversation/${conversationOneId}/message/${messageOneId}`)
+      .send({ content: 'Hello' })
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserTwo)
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
+
+  it('responds with a 400 due to not containing content', (done) => {
+    agent
+      .put(`/conversation/${conversationOneId}/message/${messageOneId}`)
+      .send({})
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 due to content only containing whitespace', (done) => {
+    agent
+      .put(`/conversation/${conversationOneId}/message/${messageOneId}`)
+      .send({ content: '            ' })
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 due to content being empty', (done) => {
+    agent
+      .put(`/conversation/${conversationOneId}/message/${messageOneId}`)
+      .send({ content: '' })
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 due to conversation not existing', (done) => {
+    agent
+      .put(
+        `/conversation/${new mongoose.Types.ObjectId()}/message/${messageOneId}`
+      )
+      .send({ content: 'hello' })
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it('responds with a 400 due to message not existing', (done) => {
+    agent
+      .put(
+        `/conversation/${conversationOneId}/message/${new mongoose.Types.ObjectId()}`
+      )
+      .send({ content: 'hello' })
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+
+  it(`responds with a 400 due to content being > ${maxContentLength} characters long`, (done) => {
+    agent
+      .put(`/conversation/${conversationOneId}/message/${messageOneId}`)
+      .send({
+        content: 'a'.repeat(maxContentLength + 1),
+      })
+      .set('Accept', 'application/json')
+      .set('Cookie', cookiesUserOne)
+      .expect('Content-Type', /json/)
+      .expect(400, done);
+  });
+});
+
+describe('POST /conversation/:conversation/message', () => {
   it('responds with a 201 and creates new message with only content', (done) => {
     agent
       .post(`/conversation/${conversationOneId}/message`)
