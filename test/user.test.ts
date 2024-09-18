@@ -36,7 +36,7 @@ import {
   userThreeId,
   userFourId,
   conversationOneId,
-  pinnedConversationId,
+  unpinnedConversationId,
   messageOneId,
   conversationTwoId,
   conversationThreeId,
@@ -423,9 +423,11 @@ describe('PUT /users/:user/pins', () => {
       .set('Accept', 'application/json')
       .set('Cookie', cookiesUserOne)
       .expect('Content-Type', /json/)
-      .send({ pinnedConversations: [conversationOneId] })
+      .send({
+        pinnedConversations: [conversationOneId, unpinnedConversationId],
+      })
       .expect(200);
-    expect(response.body.pinnedConversations).toContain(conversationOneId);
+    expect(response.body.pinnedConversations).toContain(unpinnedConversationId);
   });
 
   it('responds with a 200 and unpins all conversations', async () => {
@@ -688,7 +690,7 @@ describe('POST /signup', () => {
     request(app)
       .post('/signup')
       .send({
-        username: 'uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu',
+        username: 'u'.repeat(maxUsernameLength + 1),
         password: 'P@ssw0rd',
         confirmPassword: 'P@ssw0rd',
       })
@@ -745,7 +747,7 @@ describe('GET /users/:user/pins', () => {
 
     expect(response.body).toBeInstanceOf(Array);
     expect(response.body).toHaveLength(1);
-    expect(response.body[0]._id).toBe(pinnedConversationId.toString());
+    expect(response.body[0]._id).toBe(conversationOneId.toString());
   });
 
   it("responds with a 400 due to user attempting to retrive another user's pinnedConversations", async () => {
@@ -824,6 +826,62 @@ describe('DELETE /users/:user', () => {
     await agent
       .delete(`/users/${userTwoId}`)
       .set('Cookie', cookiesUserOne)
+      .expect(400);
+  });
+});
+
+describe('PUT /users/:user/username', () => {
+  it('responds with a 200 and updates the username', async () => {
+    const response = await agent
+      .put(`/users/${userOneId}/username`)
+      .set('Cookie', cookiesUserOne)
+      .send({ username: 'newusername' })
+      .expect(200);
+
+    expect(response.body.username).toBe('newusername');
+  });
+
+  it('responds with a 400 due to username being taken', async () => {
+    await agent
+      .put(`/users/${userOneId}/username`)
+      .set('Cookie', cookiesUserOne)
+      .send({ username: 'username2' })
+      .expect(400);
+  });
+
+  it('responds with a 400 due to username being the same', async () => {
+    await agent
+      .put(`/users/${userOneId}/username`)
+      .set('Cookie', cookiesUserOne)
+      .send({ username: 'username' })
+      .expect(400);
+  });
+
+  it('responds with a 400 due to username being taken with different casing', async () => {
+    await agent
+      .put(`/users/${userOneId}/username`)
+      .set('Cookie', cookiesUserOne)
+      .send({ username: 'USERNAME2' })
+      .expect(400);
+  });
+
+  it(`responds with a 400 due to username being < ${minUsernameLength} characters long`, async () => {
+    await agent
+      .put(`/users/${userOneId}/username`)
+      .set('Cookie', cookiesUserOne)
+      .send({ username: 'u'.repeat(minUsernameLength - 1) })
+      .expect(400);
+  });
+
+  it(`responds with a 400 due to username being > ${maxUsernameLength} characters long`, async () => {
+    await agent
+      .put(`/users/${userOneId}/username`)
+      .set('Cookie', cookiesUserOne)
+      .send({
+        username: 'u'.repeat(maxUsernameLength + 1),
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
       .expect(400);
   });
 });

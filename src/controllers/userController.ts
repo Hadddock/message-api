@@ -143,6 +143,36 @@ export const getUser: RequestHandler = async (req, res, next) => {
   res.status(200).json(user.getPublicProfile());
 };
 
+export const putUsername: RequestHandler = async (req, res, next) => {
+  const { username } = req.body;
+  const user = await User.findById(req.user?.id);
+
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  const existingUser = await User.findOne({
+    username: new RegExp('^' + username + '$', 'i'),
+  });
+
+  if (existingUser) {
+    return res.status(400).json({
+      message: 'Username already taken',
+    });
+  }
+
+  if (username === user.username) {
+    return res.status(400).json({
+      message: 'Username is the same as the current username',
+    });
+  }
+
+  user.username = username;
+
+  await user.save();
+  res.status(200).json(user.getPublicProfile());
+};
+
 export const signUp: RequestHandler = async (req, res, next) => {
   const { username, password, email, bio } = req.body;
 

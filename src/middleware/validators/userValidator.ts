@@ -163,6 +163,23 @@ export const validateDeleteUser = [
   },
 ];
 
+export const validatePutUsername = [
+  check('username')
+    .isString()
+    .withMessage('username must be a string')
+    .isLength({ min: minUsernameLength, max: maxUsernameLength })
+    .withMessage(
+      `Invalid username. Username must be between ${minUsernameLength} and ${maxUsernameLength} characters`
+    ),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  },
+];
+
 export const validateSignUp = [
   check('username')
     .isString()

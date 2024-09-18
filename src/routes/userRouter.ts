@@ -12,12 +12,14 @@ import {
   searchUser,
   deleteUser,
   getBlockedUsers,
+  putUsername,
 } from '../controllers/userController';
 import asyncHandler from 'express-async-handler';
 import {
   validatePutPins,
   validateGetPins,
   validateDeleteUser,
+  validatePutUsername,
   validateGetUser,
   validateSearchUser,
   validateBlock,
@@ -28,6 +30,13 @@ import {
 import { checkAuthentication } from '../middleware/authentication';
 
 const router = express.Router();
+
+router.put(
+  '/users/:user/username',
+  checkAuthentication,
+  validatePutUsername,
+  asyncHandler(putUsername)
+);
 
 router.put(
   '/users/:user/block',
@@ -42,6 +51,7 @@ router.get(
   validateGetBlockedUsers,
   asyncHandler(getBlockedUsers)
 );
+
 router.put(
   '/users/:user/unblock',
   checkAuthentication,
@@ -55,12 +65,14 @@ router.get(
   validateGetUser,
   asyncHandler(getUser)
 );
+
 router.get(
   '/users/:user/pins',
   checkAuthentication,
   validateGetPins,
   asyncHandler(getPins)
 );
+
 router.put(
   '/users/:user/pins',
   checkAuthentication,
@@ -73,6 +85,7 @@ router.get(
   validateSearchUser,
   asyncHandler(searchUser)
 );
+
 router.post('/login', asyncHandler(login));
 router.get('/logout', asyncHandler(logout));
 router.post('/signup', validateSignUp, asyncHandler(signUp));

@@ -19,7 +19,7 @@ export let conversationOneId: mongoose.Types.ObjectId; //user one is admin, conv
 export let conversationTwoId: mongoose.Types.ObjectId; //user two is admin, convesation with user two and user three
 export let conversationThreeId: mongoose.Types.ObjectId; //user two is admin, conversation with user one and user two
 
-export let pinnedConversationId: mongoose.Types.ObjectId; //user one has pinned this conversation
+export let unpinnedConversationId: mongoose.Types.ObjectId; //user one has pinned this conversation
 
 export let conversationFullId: mongoose.Types.ObjectId; // converation with maxUsers (including user one)
 export let bulkUserArray: string[] = [];
@@ -134,15 +134,14 @@ export const initializeDatabaseEntries = async () => {
 
   conversationThreeId = conversationThree.id;
 
-  const pinnedConversation = new Conversation({
+  const unpinnedConversation = new Conversation({
     name: 'pinnedConversation',
     users: [userOneId, userTwoId],
     admins: [userOneId],
   });
-  await pinnedConversation.save();
-  pinnedConversationId = pinnedConversation.id;
+  await unpinnedConversation.save();
+  unpinnedConversationId = unpinnedConversation.id;
 
-  userOne.pinnedConversations.push(pinnedConversation.id);
   userOne.save();
 
   const userPromises = [];
