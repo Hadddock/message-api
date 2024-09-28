@@ -180,6 +180,33 @@ export const validatePutUsername = [
   },
 ];
 
+export const validatePutPassword = [
+  check('newPassword')
+    .isStrongPassword({
+      minLength: 8,
+      minLowercase: 1,
+      minUppercase: 1,
+      minNumbers: 1,
+      minSymbols: 1,
+    })
+    .withMessage(
+      'Password is not strong enough. Passwords must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character'
+    ),
+  check('confirmPassword').custom((value, { req }) => {
+    if (value !== req.body.newPassword) {
+      throw new Error('Passwords do not match');
+    }
+    return true;
+  }),
+  (req: Request, res: Response, next: NextFunction) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
+    }
+    next();
+  },
+];
+
 export const validateSignUp = [
   check('username')
     .isString()

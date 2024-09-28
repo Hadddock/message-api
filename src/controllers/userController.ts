@@ -143,6 +143,46 @@ export const getUser: RequestHandler = async (req, res, next) => {
   res.status(200).json(user.getPublicProfile());
 };
 
+export const putPassword: RequestHandler = async (req, res, next) => {
+  const { currentPassword, newPassword } = req.body;
+  const user = await User.findById(req.user?.id);
+
+  if (!user) {
+    return res.status(404).json({ message: 'User not found' });
+  }
+
+  if (user.password === undefined) {
+    return res.status(400).json({ message: 'User does not have a password' });
+  }
+
+  bcrypt.compare(currentPassword, user.password, async (err, result) => {
+    if (err) {
+      return next(err);
+    }
+
+    if (!result) {
+      return res.status(400).json({ message: 'Incorrect password' });
+    }
+
+    if (!isStrongPassword(newPassword)) {
+      return res.status(400).json({
+        message:
+          'Password is not strong enough. Passwords must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.',
+      });
+    }
+
+    if (newPassword.length > maxPasswordLength) {
+      return res.status(400).json({
+        message: `Password is too long. Password must be <= ${maxPasswordLength} characters long`,
+      });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+    res.status(200).json(user.getPublicProfile());
+  });
+};
+
 export const putUsername: RequestHandler = async (req, res, next) => {
   const { username } = req.body;
   const user = await User.findById(req.user?.id);

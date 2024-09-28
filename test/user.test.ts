@@ -19,6 +19,7 @@ import {
   disconnectDatabase,
   initializeDatabaseEntries,
   loginAndGetCookies,
+  userOnePassword,
 } from './utils/setupDatabase';
 
 import { maxMessages } from '../src/controllers/conversationController';
@@ -60,6 +61,7 @@ beforeEach(async () => {
   await initializeDatabaseEntries();
   agent = request.agent(app); // Create a new agent instance
   cookiesUserOne = await loginAndGetCookies('username', 'P@ssw0rd');
+
   cookiesUserFour = await loginAndGetCookies('username4', 'P@ssw0rd');
 });
 
@@ -883,5 +885,154 @@ describe('PUT /users/:user/username', () => {
       .set('Accept', 'application/json')
       .expect('Content-Type', /json/)
       .expect(400);
+  });
+});
+
+describe('PUT /users/:user/password', () => {
+  it('responds with a 200 and updates the password', async () => {
+    await agent
+      .put(`/users/${userOneId}/password`)
+      .set('Cookie', cookiesUserOne)
+      .send({
+        currentPassword: userOnePassword,
+        newPassword: 'P@ssw0rd2',
+        confirmPassword: 'P@ssw0rd2',
+      })
+      .expect(200);
+
+    await agent
+      .post('/login')
+      .send({
+        username: 'username',
+        password: 'P@ssw0rd2',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(200);
+  });
+
+  it('responds with a 400 password not strong enough due to lacking an uppercase character', async () => {
+    await agent
+      .put(`/users/${userOneId}/password`)
+      .set('Cookie', cookiesUserOne)
+      .send({
+        currentPassword: userOnePassword,
+        newPassword: 'p@ssw0rd2',
+        confirmPassword: 'p@ssw0rd2',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
+
+  it('responds with a 400 password not strong enough due to lacking a lowercase character', async () => {
+    await agent
+      .put(`/users/${userOneId}/password`)
+      .set('Cookie', cookiesUserOne)
+      .send({
+        currentPassword: userOnePassword,
+        newPassword: 'P@SSW0RD',
+        confirmPassword: 'P@SSW0RD',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
+
+  it('responds with a 400 password not strong enough due to lacking a symbol', async () => {
+    await agent
+      .put(`/users/${userOneId}/password`)
+      .set('Cookie', cookiesUserOne)
+      .send({
+        currentPassword: userOnePassword,
+        newPassword: 'Passw0rd',
+        confirmPassword: 'Passw0rd',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
+
+  it('responds with a 400 password not strong enough due to lacking a number', async () => {
+    await agent
+      .put(`/users/${userOneId}/password`)
+      .set('Cookie', cookiesUserOne)
+      .send({
+        currentPassword: userOnePassword,
+        newPassword: 'P@ssword',
+        confirmPassword: 'P@ssword',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
+
+  it(`responds with a 400 due to password being > ${maxPasswordLength} characters long`, async () => {
+    await agent
+      .put(`/users/${userOneId}/password`)
+      .set('Cookie', cookiesUserOne)
+      .send({
+        currentPassword: userOnePassword,
+        newPassword: 'P@ssw0r' + 'e'.repeat(maxPasswordLength - 6),
+        confirmPassword: 'P@ssw0r' + 'e'.repeat(maxPasswordLength - 6),
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
+
+  it(`responds with a 400 due to password being < ${minPasswordLength} characters long`, async () => {
+    await agent
+      .put(`/users/${userOneId}/password`)
+      .set('Cookie', cookiesUserOne)
+      .send({
+        currentPassword: userOnePassword,
+        newPassword: 'P@0' + 'd'.repeat(minPasswordLength - 4),
+        confirmPassword: 'P@0' + 'd'.repeat(minPasswordLength - 4),
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
+
+  it(`responds with a 400 due to currentPassword being incorrect`, async () => {
+    await agent
+      .put(`/users/${userOneId}/password`)
+      .set('Cookie', cookiesUserOne)
+      .send({
+        currentPassword: userOnePassword + 'a',
+        newPassword: 'P@ssw0rd2',
+        confirmPassword: 'P@ssw0rd2',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
+
+  it(`responds with a 400 due to newPassword not matching confirmPassword`, async () => {
+    await agent
+      .put(`/users/${userOneId}/password`)
+      .set('Cookie', cookiesUserOne)
+      .send({
+        currentPassword: userOnePassword,
+        newPassword: 'P@ssw0rd2',
+        confirmPassword: 'P@ssw0rd3',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(400);
+  });
+
+  it(`responds with a 403 due to not being authenticated`, async () => {
+    await agent
+      .put(`/users/${userOneId}/password`)
+      .send({
+        currentPassword: userOnePassword,
+        newPassword: 'P@ssw0rd2',
+        confirmPassword: 'P@ssw0rd2',
+      })
+      .set('Accept', 'application/json')
+      .expect('Content-Type', /json/)
+      .expect(403);
   });
 });

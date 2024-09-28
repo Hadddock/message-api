@@ -19,6 +19,8 @@ export let conversationOneId: mongoose.Types.ObjectId; //user one is admin, conv
 export let conversationTwoId: mongoose.Types.ObjectId; //user two is admin, convesation with user two and user three
 export let conversationThreeId: mongoose.Types.ObjectId; //user two is admin, conversation with user one and user two
 
+export const userOnePassword = 'P@ssw0rd';
+
 export let unpinnedConversationId: mongoose.Types.ObjectId; //user one has pinned this conversation
 
 export let conversationFullId: mongoose.Types.ObjectId; // converation with maxUsers (including user one)
@@ -50,7 +52,7 @@ export const initializeDatabaseEntries = async () => {
   }
   const userOne = new User({
     username: 'username',
-    password: await bcrypt.hash('P@ssw0rd', 10),
+    password: await bcrypt.hash(userOnePassword, 10),
   });
   await userOne.save();
 

@@ -11,6 +11,7 @@ import {
   signUp,
   searchUser,
   deleteUser,
+  putPassword,
   getBlockedUsers,
   putUsername,
 } from '../controllers/userController';
@@ -26,10 +27,18 @@ import {
   validateUnblock,
   validateSignUp,
   validateGetBlockedUsers,
+  validatePutPassword,
 } from '../middleware/validators/userValidator';
 import { checkAuthentication } from '../middleware/authentication';
 
 const router = express.Router();
+
+router.put(
+  '/users/:user/password',
+  checkAuthentication,
+  validatePutPassword,
+  asyncHandler(putPassword)
+);
 
 router.put(
   '/users/:user/username',
